@@ -9,11 +9,9 @@ import * as cptable from './cpexcel.full.mjs'
 import { render } from 'mustache'
 
 set_cptable(cptable)
-function createWindow(): void {
+function createWindow(): BrowserWindow {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -24,6 +22,7 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
+    mainWindow.maximize()
     mainWindow.show()
   })
 
@@ -40,18 +39,57 @@ function createWindow(): void {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
   init(mainWindow)
+  return mainWindow
 }
 
-async function sendMessage(num: string, message: string) {
-  const id = await client.getNumberId(num)
-  if (!id) return
+type Message = {
+  telf: string
+  message: string
+}
+
+async function sendMessage(win: BrowserWindow, telf: string, message: string) {
+  const id = await client.getNumberId(telf)
+  if (!id)
+    return win.webContents.send(
+      'error',
+
+      `El número de teléfono ${telf} no se encuentra registrado en WhatsApp`
+    )
   const chat = await client.getChatById(id._serialized)
-  if (!chat) return
+  if (!chat)
+    return win.webContents.send(
+      'error',
+      `No se pudo iniciar un chat con el número de teléfono ${telf}`
+    )
   chat.sendMessage(message)
 }
 
+function random(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min)) + min
+}
+
+//TODO: make configurable
+const min_time = 0
+const max_time = 1000
+function scheduleMessages(win: BrowserWindow, messages: Message[]) {
+  let i = 0
+  const wait_in_ms = random(min_time, max_time)
+
+  const scheduleNextMessage = () => {
+    if (i === messages.length) return
+
+    const currentMessage = messages[i]
+    i++
+    sendMessage(win, currentMessage.telf, currentMessage.message)
+    const _wait_in_ms = random(min_time, max_time)
+    setTimeout(scheduleNextMessage, _wait_in_ms)
+  }
+
+  setTimeout(scheduleNextMessage, wait_in_ms)
+}
+
 let client: Client
-function init(window: BrowserWindow) {
+function init(win: BrowserWindow) {
   const opts: ClientOptions = {
     webVersionCache: {
       type: 'remote',
@@ -62,27 +100,27 @@ function init(window: BrowserWindow) {
   }
   client = new Client(opts)
   client.on('loading_screen', (percent, message) => {
-    window.webContents.send('loading', percent, message)
+    win.webContents.send('loading', percent, message)
   })
   client.on('qr', (qr) => {
     console.log(qr)
-    window.webContents.send('qr', qr)
+    win.webContents.send('qr', qr)
   })
   client.on('auth_failure', (message) => {
-    window.webContents.send('auth-failure', message)
+    win.webContents.send('auth-failure', message)
   })
   client.on('authenticated', () => {
-    window.webContents.send('authenticated')
+    win.webContents.send('authenticated')
   })
   client.on('ready', async () => {
-    window.webContents.send('ready')
+    win.webContents.send('ready')
   })
 
   ipcMain.on('logout', () => {
     client.logout()
   })
   ipcMain.on('send-message', async (_event, num: string, message: string) => {
-    sendMessage(num, message)
+    sendMessage(win, num, message)
   })
   client.initialize()
 }
@@ -101,9 +139,9 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  createWindow()
+  const mainWindow = createWindow()
 
-  ipcMain.handle('read-file', async () => {
+  ipcMain.handle('sheet:read', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       filters: [{ name: 'Excel', extensions: ['xlsx'] }],
       properties: ['openFile']
@@ -117,13 +155,32 @@ app.whenReady().then(() => {
     const workbook = readFile(path)
     const first_sheet = Object.values(workbook.Sheets)[0]
     const json_sheet = utils.sheet_to_json<Record<string, string | number>>(first_sheet)
-    json_sheet.forEach((col) => {
-      if (!col.telf) return
-      const telf = `593${col.telf.toString()}`
-      const message = render(template, col)
-      sendMessage(telf, message)
-    })
+    const messages = json_sheet
+      .filter((col, i) => {
+        if (!col.telf) {
+          mainWindow.webContents.send(
+            'error',
+            `La columna número ${i + 1} no contiene un número de teléfono`
+          )
+          return false
+        }
+        return true
+      })
+      .map((col) => {
+        let telf = col.telf.toString()
+        if (telf.length == 10) telf = `593${col.telf.toString()}`
+        const message = render(template, col)
+        return { message, telf }
+      })
+    scheduleMessages(mainWindow, messages)
     return true
+  })
+  ipcMain.handle('sheet:preview', async (_event, path: string) => {
+    const workbook = readFile(path)
+    const first_sheet = Object.values(workbook.Sheets)[0]
+    const json_sheet = utils.sheet_to_json<Record<string, string | number>>(first_sheet)
+    if (json_sheet.length == 0) return []
+    return json_sheet[0]
   })
 
   app.on('activate', function () {

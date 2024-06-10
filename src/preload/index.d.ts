@@ -1,5 +1,4 @@
 import type { ElectronAPI } from '@electron-toolkit/preload'
-import type { WAState } from 'whatsapp-web.js'
 
 declare global {
   interface Window {
@@ -10,9 +9,11 @@ declare global {
       onAuthenticated: (callback: () => void) => void
       onReady: (callback: () => void) => void
       onLoading: (callback: (percent: string, loadingMessage: string) => void) => void
+      onError: (callback: (error: string) => void) => void
       logout: () => void
       sendMessage: (num: string, message: string) => void
-      readFile: () => Promise<string | null>
+      sheetRead: () => Promise<string | null>
+      sheetPreview: (dataPath: string) => Promise<null | Record<string, string | number>>
       sendTemplate: (template: string, path: string) => Promise<boolean>
     }
   }

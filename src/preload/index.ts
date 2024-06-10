@@ -12,9 +12,12 @@ const api = {
   onReady: (callback: () => void) => ipcRenderer.on('ready', (_event) => callback()),
   onLoading: (callback: (percent: string, message: string) => void) =>
     ipcRenderer.on('loading', (_event, percent, message) => callback(percent, message)),
+  onError: (callback: (error: string) => void) =>
+    ipcRenderer.on('error', (_event, error) => callback(error)),
   logout: () => ipcRenderer.send('logout'),
   sendMessage: (num: string, message: string) => ipcRenderer.send('send-message', num, message),
-  readFile: () => ipcRenderer.invoke('read-file'),
+  sheetRead: () => ipcRenderer.invoke('sheet:read'),
+  sheetPreview: (dataPath: string) => ipcRenderer.invoke('sheet:preview', dataPath),
   sendTemplate: (template: string, path: string) =>
     ipcRenderer.invoke('send-template', template, path)
 }

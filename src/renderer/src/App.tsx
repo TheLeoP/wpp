@@ -1,19 +1,38 @@
 import { MutableRefObject, useEffect, useRef, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
+import { Toaster } from '@renderer/components/ui/toaster'
+import { useToast } from '@renderer/components/ui/use-toast'
+import { Button } from '@renderer/components/ui/button'
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@renderer/components/ui/table'
 
 let isFirstTime = true
 function App(): JSX.Element {
   const [qr, setQr] = useState<string>()
-  const [error, setError] = useState<string>()
   const [isAuth, setIsAuth] = useState(false)
   const [isReady, setIsReady] = useState(false)
 
-  const [percent, setPercent] = useState<string>()
-  const [loadingMessage, setLoadingMessage] = useState<string>()
-
   const [dataPath, setDataPath] = useState<string>()
+  const [preview, setPreview] = useState<Record<string, string | number>>()
 
   const form: MutableRefObject<HTMLFormElement | null> = useRef(null)
+
+  const { toast } = useToast()
+
+  useEffect(() => {
+    if (!dataPath || dataPath === '') return setPreview({})
+    window.api.sheetPreview(dataPath).then((preview) => {
+      if (!preview) return
+      setPreview(preview)
+    })
+  }, [dataPath])
 
   useEffect(() => {
     if (!isFirstTime) return
@@ -22,7 +41,10 @@ function App(): JSX.Element {
       setQr(qr)
     })
     window.api.onAuthFailure((message: string) => {
-      setError(message)
+      toast({ title: 'Error de autenticación', description: message, variant: 'destructive' })
+    })
+    window.api.onError((error: string) => {
+      toast({ title: 'Error', description: error, variant: 'destructive' })
     })
     window.api.onAuthenticated(() => {
       setIsAuth(true)
@@ -31,31 +53,28 @@ function App(): JSX.Element {
       setIsReady(true)
     })
     window.api.onLoading((percent, loadingMessage) => {
-      setPercent(percent)
-      setLoadingMessage(loadingMessage)
+      toast({
+        title: 'Progreso',
+        description: `${percent}% ${loadingMessage}`
+      })
     })
   }, [])
 
   return (
     <>
-      {!isReady && (
-        <div className="mt-2 w-full self-center text-center text-4xl">
-          Iniciando WhatsApp. Espere
-        </div>
-      )}
       <div className="flex h-screen flex-col items-center justify-center">
-        {!!percent && (
-          <div>
-            {percent}% {loadingMessage}
+        {!isReady && (
+          <div className="mt-2 w-full self-center text-center text-4xl">
+            Iniciando WhatsApp. Espere
           </div>
         )}
-
         {isAuth && (
           <div className="flex h-full w-full flex-col items-center">
             <form
-              className="flex h-2/3 w-2/3 flex-col items-center space-y-2"
+              className="my-2 flex h-2/3 w-2/3 flex-col items-center space-y-2"
               onSubmit={async (event) => {
                 event.preventDefault()
+                //TODO: what is the default value for an emtpy textarea?
                 // @ts-ignore Typescript doesn't know about input types
                 const { message } = event.currentTarget.elements
                 if (!dataPath) throw new Error('There is no data_path')
@@ -65,32 +84,69 @@ function App(): JSX.Element {
               }}
               ref={form}
             >
-              <span className="w-full">Archivo: {dataPath ?? '  '}</span>
-              <button
-                type="button"
-                className="rounded border p-4 hover:bg-gray-200"
-                onClick={async () => {
-                  const path = await window.api.readFile()
-                  if (!path) return
-                  setDataPath(path)
-                }}
-              >
-                Leer archivo
-              </button>
+              <div className="flex w-full flex-col space-y-4 border p-2">
+                <div className="w-full text-center">
+                  <div className="w-full text-center font-bold">Archivo:</div>
+                  <div>{dataPath}</div>
+                </div>
+
+                <Table>
+                  <TableCaption>Valores encontrados en la primera columna</TableCaption>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="border">Encabezados</TableHead>
+                      <TableHead className="border">Valores</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {preview &&
+                      Object.entries(preview).map(([key, value]) => (
+                        <TableRow key={key}>
+                          <TableCell className="border">{key}</TableCell>
+                          <TableCell className="border">{value}</TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+
+                <div className="flex flex-row justify-center space-x-2">
+                  <Button
+                    type="button"
+                    onClick={async () => {
+                      const path = await window.api.sheetRead()
+                      if (!path) return
+                      setDataPath(path)
+                    }}
+                  >
+                    Leer archivo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={async () => {
+                      setDataPath('')
+                    }}
+                  >
+                    Cerrar archivo
+                  </Button>
+                </div>
+              </div>
               <label htmlFor="message" className="w-full">
                 Plantilla:
               </label>
-              <textarea id="message" className="h-2/3 w-full border"></textarea>
-              <input
-                type="submit"
-                value="Enviar"
-                className="rounded border bg-green-400 p-4 hover:cursor-pointer disabled:bg-green-200 disabled:text-gray-400"
-                disabled={!dataPath}
-              />
+              <textarea
+                id="message"
+                className="h-2/3 w-full border"
+                placeholder="Hola, {{nombre}}"
+                required={true}
+              ></textarea>
+              <Button type="submit" disabled={!dataPath}>
+                Enviar
+              </Button>
             </form>
 
-            <button
-              className="mt-2 rounded bg-red-400 p-4 hover:bg-red-600"
+            <Button
+              variant="destructive"
               onClick={() => {
                 window.api.logout()
                 setIsAuth(false)
@@ -98,11 +154,10 @@ function App(): JSX.Element {
               }}
             >
               Cerrar sesión
-            </button>
+            </Button>
           </div>
         )}
 
-        {error && <div>{error}</div>}
         {!isAuth && qr && (
           <div className="flex flex-col items-center">
             <div className="mb-10 text-2xl">
@@ -112,6 +167,7 @@ function App(): JSX.Element {
           </div>
         )}
       </div>
+      <Toaster />
     </>
   )
 }
