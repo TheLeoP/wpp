@@ -1,8 +1,18 @@
-import { MutableRefObject, useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { Toaster } from '@renderer/components/ui/toaster'
 import { useToast } from '@renderer/components/ui/use-toast'
 import { Button } from '@renderer/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@renderer/components/ui/form'
+import { Input } from '@renderer/components/ui/input'
 import {
   Table,
   TableBody,
@@ -12,6 +22,121 @@ import {
   TableHeader,
   TableRow
 } from '@renderer/components/ui/table'
+import { Textarea } from '@renderer/components/ui/textarea'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@renderer/components/ui/tabs'
+
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+
+const formSchema = z.object({
+  template: z.string().min(1),
+  data: z.string().min(1)
+})
+
+function TemplateForm() {
+  const [preview, setPreview] = useState<Record<string, string | number>>()
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      template: '',
+      data: ''
+    }
+  })
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    const { template, data } = values
+    const ok = await window.api.sendTemplate(template, data)
+    if (!ok) throw new Error('There was an error sending the template')
+    form.reset()
+  }
+
+  const data = form.watch('data')
+  useEffect(() => {
+    if (!data || data === '') return setPreview({})
+    window.api.sheetPreview(data).then((preview) => {
+      if (!preview) return
+      setPreview(preview)
+    })
+  }, [data])
+
+  return (
+    <Form {...form}>
+      <form
+        className="my-2 flex h-full w-2/3 flex-col items-center space-y-2"
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
+        <FormField
+          control={form.control}
+          name="data"
+          render={({ field }) => (
+            <FormItem className="h-fit w-full">
+              <FormLabel>Datos:</FormLabel>
+              <FormControl>
+                <div className="space-x-2">
+                  <span>{data == '' ? 'Ningún archivo seleccionado' : data}</span>
+                  <Button
+                    type="button"
+                    onClick={async () => {
+                      const path = await window.api.sheetRead()
+                      if (!path) return
+                      form.setValue('data', path)
+                    }}
+                    {...field}
+                  >
+                    Leer archivo
+                  </Button>
+                </div>
+              </FormControl>
+              <FormDescription>Datos para la plantilla</FormDescription>
+            </FormItem>
+          )}
+        />
+
+        <Table>
+          <TableCaption>Valores encontrados en la primera columna</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="border">Encabezados</TableHead>
+              <TableHead className="border">Valores</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {preview &&
+              Object.entries(preview).map(([key, value]) => (
+                <TableRow key={key}>
+                  <TableCell className="border">{key}</TableCell>
+                  <TableCell className="border">{value}</TableCell>
+                </TableRow>
+              ))}
+          </TableBody>
+        </Table>
+
+        <FormField
+          control={form.control}
+          name="template"
+          render={({ field }) => (
+            <FormItem className="h-fit w-full">
+              <FormLabel>Plantilla:</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Hola, {{nombre}}"
+                  {...field}
+                  className="h-96 resize-none border"
+                  required
+                ></Textarea>
+              </FormControl>
+              <FormDescription>Plantilla del mensaje a enviar</FormDescription>
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit">Enviar</Button>
+      </form>
+    </Form>
+  )
+}
 
 let isFirstTime = true
 function App(): JSX.Element {
@@ -19,20 +144,7 @@ function App(): JSX.Element {
   const [isAuth, setIsAuth] = useState(false)
   const [isReady, setIsReady] = useState(false)
 
-  const [dataPath, setDataPath] = useState<string>()
-  const [preview, setPreview] = useState<Record<string, string | number>>()
-
-  const form: MutableRefObject<HTMLFormElement | null> = useRef(null)
-
   const { toast } = useToast()
-
-  useEffect(() => {
-    if (!dataPath || dataPath === '') return setPreview({})
-    window.api.sheetPreview(dataPath).then((preview) => {
-      if (!preview) return
-      setPreview(preview)
-    })
-  }, [dataPath])
 
   useEffect(() => {
     if (!isFirstTime) return
@@ -70,81 +182,19 @@ function App(): JSX.Element {
         )}
         {isAuth && (
           <div className="flex h-full w-full flex-col items-center">
-            <form
-              className="my-2 flex h-2/3 w-2/3 flex-col items-center space-y-2"
-              onSubmit={async (event) => {
-                event.preventDefault()
-                //TODO: what is the default value for an emtpy textarea?
-                // @ts-ignore Typescript doesn't know about input types
-                const { message } = event.currentTarget.elements
-                if (!dataPath) throw new Error('There is no data_path')
-                const ok = await window.api.sendTemplate(message.value, dataPath)
-                if (!ok) throw new Error('There was an error sending the template')
-                if (form.current) form.current.reset()
-              }}
-              ref={form}
-            >
-              <div className="flex w-full flex-col space-y-4 border p-2">
-                <div className="w-full text-center">
-                  <div className="w-full text-center font-bold">Archivo:</div>
-                  <div>{dataPath}</div>
-                </div>
-
-                <Table>
-                  <TableCaption>Valores encontrados en la primera columna</TableCaption>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="border">Encabezados</TableHead>
-                      <TableHead className="border">Valores</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {preview &&
-                      Object.entries(preview).map(([key, value]) => (
-                        <TableRow key={key}>
-                          <TableCell className="border">{key}</TableCell>
-                          <TableCell className="border">{value}</TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-
-                <div className="flex flex-row justify-center space-x-2">
-                  <Button
-                    type="button"
-                    onClick={async () => {
-                      const path = await window.api.sheetRead()
-                      if (!path) return
-                      setDataPath(path)
-                    }}
-                  >
-                    Leer archivo
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={async () => {
-                      setDataPath('')
-                    }}
-                  >
-                    Cerrar archivo
-                  </Button>
-                </div>
-              </div>
-              <label htmlFor="message" className="w-full">
-                Plantilla:
-              </label>
-              <textarea
-                id="message"
-                className="h-2/3 w-full border"
-                placeholder="Hola, {{nombre}}"
-                required={true}
-              ></textarea>
-              <Button type="submit" disabled={!dataPath}>
-                Enviar
-              </Button>
-            </form>
-
+            <Tabs className="mt-2 flex h-fit w-full flex-col items-center" defaultValue="template">
+              <TabsList>
+                <TabsTrigger value="template">Enviar plantilla</TabsTrigger>
+                <TabsTrigger value="configuration">Configuración</TabsTrigger>
+              </TabsList>
+              <TabsContent
+                value="template"
+                className="flex h-full w-full flex-col items-center justify-center"
+              >
+                <TemplateForm />
+              </TabsContent>
+              <TabsContent value="configuration">Configuración</TabsContent>
+            </Tabs>
             <Button
               variant="destructive"
               onClick={() => {
