@@ -1,8 +1,9 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, protocol, net } from 'electron'
+import { fileURLToPath } from 'url'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { Client, LocalAuth } from 'whatsapp-web.js'
+import { Client, LocalAuth, MessageMedia } from 'whatsapp-web.js'
 import type { ClientOptions } from 'whatsapp-web.js'
 import { readFile, utils, set_cptable } from 'xlsx'
 import * as cptable from './cpexcel.full.mjs'
@@ -47,7 +48,7 @@ type Message = {
   message: string
 }
 
-async function sendMessage(win: BrowserWindow, telf: string, message: string) {
+async function sendMessage(win: BrowserWindow, telf: string, message: string, media: string) {
   const id = await client.getNumberId(telf)
   if (!id)
     return win.webContents.send(
@@ -61,7 +62,11 @@ async function sendMessage(win: BrowserWindow, telf: string, message: string) {
       'error',
       `No se pudo iniciar un chat con el número de teléfono ${telf}`
     )
-  chat.sendMessage(message)
+  if (media !== '') {
+    chat.sendMessage(message, { media: MessageMedia.fromFilePath(media) })
+  } else {
+    chat.sendMessage(message)
+  }
 }
 
 function random(min: number, max: number) {
@@ -71,7 +76,7 @@ function random(min: number, max: number) {
 //TODO: make configurable
 const min_time = 0
 const max_time = 1000
-function scheduleMessages(win: BrowserWindow, messages: Message[]) {
+function scheduleMessages(win: BrowserWindow, messages: Message[], media: string) {
   let i = 0
   const wait_in_ms = random(min_time, max_time)
 
@@ -80,7 +85,7 @@ function scheduleMessages(win: BrowserWindow, messages: Message[]) {
 
     const currentMessage = messages[i]
     i++
-    sendMessage(win, currentMessage.telf, currentMessage.message)
+    sendMessage(win, currentMessage.telf, currentMessage.message, media)
     const _wait_in_ms = random(min_time, max_time)
     setTimeout(scheduleNextMessage, _wait_in_ms)
   }
@@ -140,6 +145,12 @@ app.whenReady().then(() => {
   })
 
   const mainWindow = createWindow()
+  protocol.handle('media', (req) => {
+    let filePath = req.url.slice('media://'.length)
+    filePath = decodeURIComponent(filePath)
+    const _path = fileURLToPath(`file://${filePath}`)
+    return net.fetch(_path)
+  })
 
   ipcMain.handle('sheet:read', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
@@ -151,7 +162,22 @@ app.whenReady().then(() => {
     }
     return null
   })
-  ipcMain.handle('send-template', async (_event, template: string, path: string) => {
+  ipcMain.handle('image:read', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      filters: [
+        {
+          name: 'Media',
+          extensions: ['jpeg', 'jpg', 'png', 'mp4', 'avi', '3gp', 'wmv', 'mov', 'mkv', 'webm']
+        }
+      ],
+      properties: ['openFile']
+    })
+    if (!canceled) {
+      return filePaths[0]
+    }
+    return null
+  })
+  ipcMain.handle('send-template', async (_event, template: string, path: string, media: string) => {
     const workbook = readFile(path)
     const first_sheet = Object.values(workbook.Sheets)[0]
     const json_sheet = utils.sheet_to_json<Record<string, string | number>>(first_sheet)
@@ -172,7 +198,7 @@ app.whenReady().then(() => {
         const message = render(template, col)
         return { message, telf }
       })
-    scheduleMessages(mainWindow, messages)
+    scheduleMessages(mainWindow, messages, media)
     return true
   })
   ipcMain.handle('sheet:preview', async (_event, path: string) => {

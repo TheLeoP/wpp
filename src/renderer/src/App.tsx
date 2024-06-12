@@ -31,6 +31,7 @@ import { useForm } from 'react-hook-form'
 
 const formSchema = z.object({
   template: z.string().min(1),
+  media: z.string().min(1),
   data: z.string().min(1)
 })
 
@@ -41,13 +42,14 @@ function TemplateForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       template: '',
-      data: ''
+      data: '',
+      media: ''
     }
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const { template, data } = values
-    const ok = await window.api.sendTemplate(template, data)
+    const { template, data, media } = values
+    const ok = await window.api.sendTemplate(template, data, media)
     if (!ok) throw new Error('There was an error sending the template')
     form.reset()
   }
@@ -60,6 +62,7 @@ function TemplateForm() {
       setPreview(preview)
     })
   }, [data])
+  const media = form.watch('media')
 
   return (
     <Form {...form}>
@@ -74,7 +77,7 @@ function TemplateForm() {
             <FormItem className="h-fit w-full">
               <FormLabel>Datos:</FormLabel>
               <FormControl>
-                <div className="space-x-2">
+                <div className="space-x-2 space-y-2">
                   <span>{data == '' ? 'Ningún archivo seleccionado' : data}</span>
                   <Button
                     type="button"
@@ -87,6 +90,34 @@ function TemplateForm() {
                   >
                     Leer archivo
                   </Button>
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    onClick={async () => {
+                      form.setValue('data', '')
+                    }}
+                  >
+                    Cerrar archivo
+                  </Button>
+
+                  <Table>
+                    <TableCaption>Valores encontrados en la primera columna</TableCaption>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="border">Encabezados</TableHead>
+                        <TableHead className="border">Valores</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {preview &&
+                        Object.entries(preview).map(([key, value]) => (
+                          <TableRow key={key}>
+                            <TableCell className="border">{key}</TableCell>
+                            <TableCell className="border">{value}</TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
                 </div>
               </FormControl>
               <FormDescription>Datos para la plantilla</FormDescription>
@@ -94,43 +125,65 @@ function TemplateForm() {
           )}
         />
 
-        <Table>
-          <TableCaption>Valores encontrados en la primera columna</TableCaption>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="border">Encabezados</TableHead>
-              <TableHead className="border">Valores</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {preview &&
-              Object.entries(preview).map(([key, value]) => (
-                <TableRow key={key}>
-                  <TableCell className="border">{key}</TableCell>
-                  <TableCell className="border">{value}</TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-
-        <FormField
-          control={form.control}
-          name="template"
-          render={({ field }) => (
-            <FormItem className="h-fit w-full">
-              <FormLabel>Plantilla:</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Hola, {{nombre}}"
-                  {...field}
-                  className="h-96 resize-none border"
-                  required
-                ></Textarea>
-              </FormControl>
-              <FormDescription>Plantilla del mensaje a enviar</FormDescription>
-            </FormItem>
-          )}
-        />
+        <div className="flex w-full flex-row space-x-2">
+          <FormField
+            control={form.control}
+            name="template"
+            render={({ field }) => (
+              <FormItem className="h-fit w-full">
+                <FormLabel>Plantilla:</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Hola, {{nombre}}"
+                    {...field}
+                    className="h-96 resize-none border"
+                    required
+                  ></Textarea>
+                </FormControl>
+                <FormDescription>Plantilla del mensaje a enviar</FormDescription>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="media"
+            render={({ field }) => (
+              <FormItem className="h-fit w-full">
+                <FormLabel>Multimedia:</FormLabel>
+                <FormControl>
+                  <div className="space-x-2 space-y-2">
+                    <div>{media == '' ? 'Ningún archivo seleccionado' : media}</div>
+                    <Button
+                      type="button"
+                      onClick={async () => {
+                        const path = await window.api.imageRead()
+                        if (!path) return
+                        form.setValue('media', path)
+                      }}
+                      {...field}
+                    >
+                      Leer archivo
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      type="button"
+                      onClick={async () => {
+                        form.setValue('media', '')
+                      }}
+                    >
+                      Cerrar archivo
+                    </Button>
+                    {/*TODO: handle videos*/}
+                    {!!media && (
+                      <img className="max-h-64" src={`media://${encodeURIComponent(media)}`} />
+                    )}
+                  </div>
+                </FormControl>
+                <FormDescription>Archivo multimedia a enviar con el mensaje</FormDescription>
+              </FormItem>
+            )}
+          />
+        </div>
 
         <Button type="submit">Enviar</Button>
       </form>

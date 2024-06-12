@@ -14,7 +14,8 @@ declare global {
       sendMessage: (num: string, message: string) => void
       sheetRead: () => Promise<string | null>
       sheetPreview: (dataPath: string) => Promise<null | Record<string, string | number>>
-      sendTemplate: (template: string, path: string) => Promise<boolean>
+      sendTemplate: (template: string, path: string, media: string) => Promise<boolean>
+      imageRead: () => Promise<string | null>
     }
   }
 }

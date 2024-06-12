@@ -18,8 +18,9 @@ const api = {
   sendMessage: (num: string, message: string) => ipcRenderer.send('send-message', num, message),
   sheetRead: () => ipcRenderer.invoke('sheet:read'),
   sheetPreview: (dataPath: string) => ipcRenderer.invoke('sheet:preview', dataPath),
-  sendTemplate: (template: string, path: string) =>
-    ipcRenderer.invoke('send-template', template, path)
+  sendTemplate: (template: string, path: string, media: string) =>
+    ipcRenderer.invoke('send-template', template, path, media),
+  imageRead: () => ipcRenderer.invoke('image:read')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
