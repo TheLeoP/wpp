@@ -31,7 +31,7 @@ import { useForm } from 'react-hook-form'
 
 const formSchema = z.object({
   template: z.string().min(1),
-  media: z.string().min(1),
+  media: z.string(),
   data: z.string().min(1)
 })
 

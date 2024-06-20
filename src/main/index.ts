@@ -124,9 +124,6 @@ function init(win: BrowserWindow) {
   ipcMain.on('logout', () => {
     client.logout()
   })
-  ipcMain.on('send-message', async (_event, num: string, message: string) => {
-    sendMessage(win, num, message)
-  })
   client.initialize()
 }
 
