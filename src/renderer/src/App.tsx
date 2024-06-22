@@ -28,8 +28,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@renderer/components/u
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
+import type { Config } from '../../schemas'
+import { configSchema } from '../../schemas'
 
-const formSchema = z.object({
+const templateSchema = z.object({
   template: z.string().min(1),
   media: z.string(),
   data: z.string().min(1)
@@ -38,8 +40,8 @@ const formSchema = z.object({
 function TemplateForm() {
   const [preview, setPreview] = useState<Record<string, string | number>>()
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof templateSchema>>({
+    resolver: zodResolver(templateSchema),
     defaultValues: {
       template: '',
       data: '',
@@ -47,7 +49,7 @@ function TemplateForm() {
     }
   })
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof templateSchema>) {
     const { template, data, media } = values
     const ok = await window.api.sendTemplate(template, data, media)
     if (!ok) throw new Error('There was an error sending the template')
@@ -191,6 +193,98 @@ function TemplateForm() {
   )
 }
 
+let isFirstTimeConfig = true
+function Configuration() {
+  const form = useForm<Config>({
+    resolver: zodResolver(configSchema),
+    defaultValues: {
+      send_time: {
+        min: 0,
+        max: 1000
+      },
+      telf_col: 'telf'
+    }
+  })
+  async function onSubmit(config: Config) {
+    const maybe_err = await window.api.configSet(config)
+    if (maybe_err) throw maybe_err
+  }
+
+  useEffect(() => {
+    if (!isFirstTimeConfig) return
+    isFirstTimeConfig = false
+    window.api.configGet().then((config) => {
+      form.reset(config)
+    })
+  }, [])
+
+  return (
+    <Form {...form}>
+      {/* TODO: show form errors on toast */}
+      <form onSubmit={form.handleSubmit(onSubmit, console.error)} className="m-2">
+        <FormField
+          control={form.control}
+          name="send_time.min"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Mínimo (ms):</FormLabel>
+              <FormControl>
+                <Input type="number" {...field}></Input>
+              </FormControl>
+            </FormItem>
+          )}
+        ></FormField>
+        <FormField
+          control={form.control}
+          name="send_time.max"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Máximo (ms):</FormLabel>
+              <FormControl>
+                <Input type="number" {...field}></Input>
+              </FormControl>
+            </FormItem>
+          )}
+        ></FormField>
+        <FormDescription>
+          Rango aleatorio de tiempo a esperar entre mensajes (por defecto, entre 0 y 1 segundos)
+        </FormDescription>
+
+        <FormField
+          control={form.control}
+          name="telf_col"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Columna teléfono:</FormLabel>
+              <FormControl>
+                <Input type="tel" {...field}></Input>
+              </FormControl>
+              <FormDescription>
+                Nombre de la columna en el archivo de Excel que contiene el número de teléfono de
+                los contactos
+              </FormDescription>
+            </FormItem>
+          )}
+        ></FormField>
+
+        <div className="flex flex-row space-x-2">
+          <Button type="submit">Guardar</Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={async () => {
+              const config = await window.api.configGet()
+              form.reset(config)
+            }}
+          >
+            Cancelar
+          </Button>
+        </div>
+      </form>
+    </Form>
+  )
+}
+
 let isFirstTime = true
 function App(): JSX.Element {
   const [qr, setQr] = useState<string>()
@@ -238,6 +332,7 @@ function App(): JSX.Element {
             <Tabs className="mt-2 flex h-fit w-full flex-col items-center" defaultValue="template">
               <TabsList>
                 <TabsTrigger value="template">Enviar plantilla</TabsTrigger>
+                {/* TODO: collect all the numbers with errors in a single place */}
                 <TabsTrigger value="configuration">Configuración</TabsTrigger>
               </TabsList>
               <TabsContent
@@ -246,7 +341,9 @@ function App(): JSX.Element {
               >
                 <TemplateForm />
               </TabsContent>
-              <TabsContent value="configuration">Configuración</TabsContent>
+              <TabsContent value="configuration">
+                <Configuration />
+              </TabsContent>
             </Tabs>
             <Button
               variant="destructive"

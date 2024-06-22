@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import type { Config } from '../schemas'
 
 // Custom APIs for renderer
 const api = {
@@ -20,7 +21,9 @@ const api = {
   sheetPreview: (dataPath: string) => ipcRenderer.invoke('sheet:preview', dataPath),
   sendTemplate: (template: string, path: string, media: string) =>
     ipcRenderer.invoke('send-template', template, path, media),
-  imageRead: () => ipcRenderer.invoke('image:read')
+  imageRead: () => ipcRenderer.invoke('image:read'),
+  configGet: () => ipcRenderer.invoke('config:get'),
+  configSet: (config: Config) => ipcRenderer.invoke('config:set', config)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

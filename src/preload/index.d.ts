@@ -1,4 +1,5 @@
 import type { ElectronAPI } from '@electron-toolkit/preload'
+import type { Config } from '../schemas'
 
 declare global {
   interface Window {
@@ -16,6 +17,8 @@ declare global {
       sheetPreview: (dataPath: string) => Promise<null | Record<string, string | number>>
       sendTemplate: (template: string, path: string, media: string) => Promise<boolean>
       imageRead: () => Promise<string | null>
+      configGet: () => Promise<Config>
+      configSet: (Config) => unkown
     }
   }
 }

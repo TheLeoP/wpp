@@ -5,11 +5,36 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { Client, LocalAuth, MessageMedia } from 'whatsapp-web.js'
 import type { ClientOptions } from 'whatsapp-web.js'
-import { readFile, utils, set_cptable } from 'xlsx'
-import * as cptable from './cpexcel.full.mjs'
+import * as xlsx from 'xlsx'
 import { render } from 'mustache'
+import { promises as a } from 'fs'
+import type { Config } from '../schemas'
+import { configSchema } from '../schemas'
 
-set_cptable(cptable)
+const config_path = `${app.getPath('userData')}/config.json`
+
+let config: Promise<Config> = new Promise(async (resolve) => {
+  try {
+    const content = (await a.readFile(config_path, 'utf-8')).toString()
+    const parsed = configSchema.parse(JSON.parse(content))
+    resolve(parsed)
+  } catch (err) {
+    if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
+      const default_config = {
+        send_time: {
+          min: 0,
+          max: 1000
+        },
+        telf_col: 'telf'
+      }
+      resolve(default_config)
+      await a.writeFile(config_path, JSON.stringify(default_config))
+    } else {
+      console.error(err)
+    }
+  }
+})
+
 function createWindow(): BrowserWindow {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -73,12 +98,10 @@ function random(min: number, max: number) {
   return Math.floor(Math.random() * (max - min)) + min
 }
 
-//TODO: make configurable
-const min_time = 0
-const max_time = 1000
-function scheduleMessages(win: BrowserWindow, messages: Message[], media: string) {
+async function scheduleMessages(win: BrowserWindow, messages: Message[], media: string) {
+  const c = await config
   let i = 0
-  const wait_in_ms = random(min_time, max_time)
+  const wait_in_ms = random(c.send_time.min, c.send_time.max)
 
   const scheduleNextMessage = () => {
     if (i === messages.length) return
@@ -86,7 +109,7 @@ function scheduleMessages(win: BrowserWindow, messages: Message[], media: string
     const currentMessage = messages[i]
     i++
     sendMessage(win, currentMessage.telf, currentMessage.message, media)
-    const _wait_in_ms = random(min_time, max_time)
+    const _wait_in_ms = random(c.send_time.min, c.send_time.max)
     setTimeout(scheduleNextMessage, _wait_in_ms)
   }
 
@@ -175,12 +198,13 @@ app.whenReady().then(() => {
     return null
   })
   ipcMain.handle('send-template', async (_event, template: string, path: string, media: string) => {
-    const workbook = readFile(path)
+    const c = await config
+    const workbook = xlsx.readFile(path)
     const first_sheet = Object.values(workbook.Sheets)[0]
-    const json_sheet = utils.sheet_to_json<Record<string, string | number>>(first_sheet)
+    const json_sheet = xlsx.utils.sheet_to_json<Record<string, string | number>>(first_sheet)
     const messages = json_sheet
       .filter((col, i) => {
-        if (!col.telf) {
+        if (!col[c.telf_col]) {
           mainWindow.webContents.send(
             'error',
             `La columna número ${i + 1} no contiene un número de teléfono`
@@ -190,20 +214,32 @@ app.whenReady().then(() => {
         return true
       })
       .map((col) => {
-        let telf = col.telf.toString()
+        let telf = col[c.telf_col].toString()
         if (telf.length == 10) telf = `593${col.telf.toString()}`
         const message = render(template, col)
         return { message, telf }
       })
-    scheduleMessages(mainWindow, messages, media)
+    await scheduleMessages(mainWindow, messages, media)
     return true
   })
   ipcMain.handle('sheet:preview', async (_event, path: string) => {
-    const workbook = readFile(path)
+    const workbook = xlsx.readFile(path)
     const first_sheet = Object.values(workbook.Sheets)[0]
-    const json_sheet = utils.sheet_to_json<Record<string, string | number>>(first_sheet)
+    const json_sheet = xlsx.utils.sheet_to_json<Record<string, string | number>>(first_sheet)
     if (json_sheet.length == 0) return []
     return json_sheet[0]
+  })
+  ipcMain.handle('config:get', async () => {
+    return await config
+  })
+  ipcMain.handle('config:set', async (_event, _config: Config) => {
+    config = Promise.resolve(_config)
+    try {
+      a.writeFile(config_path, JSON.stringify(await config), 'utf-8')
+      return
+    } catch (err) {
+      return err
+    }
   })
 
   app.on('activate', function () {
@@ -221,6 +257,3 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
-
-// In this file you can include the rest of your app"s specific main process
-// code. You can also put them in separate files and require them here.
