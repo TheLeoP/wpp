@@ -201,7 +201,6 @@ function TemplateForm() {
   )
 }
 
-//TODO: show toas if config changed correctly
 function Configuration() {
   const form = useForm<Config>({
     resolver: zodResolver(configSchema),
@@ -214,10 +213,12 @@ function Configuration() {
     }
   })
   const errors = form.formState.errors
+  const { toast } = useToast()
 
   async function onSubmit(config: Config) {
     const maybe_err = await window.api.configSet(config)
     if (maybe_err) throw maybe_err
+    toast({ title: 'Configuración', description: 'La configuración fue modificada exitosamente' })
   }
 
   useEffect(() => {
