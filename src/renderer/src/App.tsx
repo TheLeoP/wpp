@@ -204,6 +204,8 @@ function Configuration() {
       telf_col: 'telf'
     }
   })
+  const errors = form.formState.errors
+
   async function onSubmit(config: Config) {
     const maybe_err = await window.api.configSet(config)
     if (maybe_err) throw maybe_err
@@ -217,8 +219,7 @@ function Configuration() {
 
   return (
     <Form {...form}>
-      {/* TODO: show form errors on toast */}
-      <form onSubmit={form.handleSubmit(onSubmit, console.error)} className="m-2">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="m-2">
         <FormField
           control={form.control}
           name="send_time.min"
@@ -228,6 +229,7 @@ function Configuration() {
               <FormControl>
                 <Input type="number" {...field}></Input>
               </FormControl>
+              {errors.send_time?.min && <FormMessage>{errors.send_time.min.message}</FormMessage>}
             </FormItem>
           )}
         ></FormField>
@@ -240,9 +242,11 @@ function Configuration() {
               <FormControl>
                 <Input type="number" {...field}></Input>
               </FormControl>
+              {errors.send_time?.max && <FormMessage>{errors.send_time.max.message}</FormMessage>}
             </FormItem>
           )}
         ></FormField>
+        {errors.send_time?.root && <FormMessage>{errors.send_time.root.message}</FormMessage>}
         <FormDescription>
           Rango aleatorio de tiempo a esperar entre mensajes (por defecto, entre 0 y 1 segundos)
         </FormDescription>
@@ -260,6 +264,7 @@ function Configuration() {
                 Nombre de la columna en el archivo de Excel que contiene el número de teléfono de
                 los contactos
               </FormDescription>
+              {errors.telf_col && <FormMessage>{errors.telf_col.message}</FormMessage>}
             </FormItem>
           )}
         ></FormField>
