@@ -193,7 +193,6 @@ function TemplateForm() {
   )
 }
 
-let isFirstTimeConfig = true
 function Configuration() {
   const form = useForm<Config>({
     resolver: zodResolver(configSchema),
@@ -211,8 +210,6 @@ function Configuration() {
   }
 
   useEffect(() => {
-    if (!isFirstTimeConfig) return
-    isFirstTimeConfig = false
     window.api.configGet().then((config) => {
       form.reset(config)
     })

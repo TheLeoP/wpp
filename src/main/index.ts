@@ -118,15 +118,14 @@ async function scheduleMessages(win: BrowserWindow, messages: Message[], media: 
 
 let client: Client
 function init(win: BrowserWindow) {
-  const opts: ClientOptions = {
+  client = new Client({
     webVersionCache: {
       type: 'remote',
       remotePath:
         'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html'
     },
     authStrategy: new LocalAuth()
-  }
-  client = new Client(opts)
+  })
   client.on('loading_screen', (percent, message) => {
     win.webContents.send('loading', percent, message)
   })
