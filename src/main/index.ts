@@ -4,7 +4,6 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { Client, LocalAuth, MessageMedia } from 'whatsapp-web.js'
-import type { ClientOptions } from 'whatsapp-web.js'
 import * as xlsx from 'xlsx'
 import { render } from 'mustache'
 import { promises as a } from 'fs'
@@ -124,13 +123,14 @@ function init(win: BrowserWindow) {
       remotePath:
         'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html'
     },
-    authStrategy: new LocalAuth()
+    authStrategy: new LocalAuth({
+      dataPath: `${app.getPath('userData')}/.wwebjs_auth/`
+    })
   })
   client.on('loading_screen', (percent, message) => {
     win.webContents.send('loading', percent, message)
   })
   client.on('qr', (qr) => {
-    console.log(qr)
     win.webContents.send('qr', qr)
   })
   client.on('auth_failure', (message) => {
