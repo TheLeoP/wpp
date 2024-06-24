@@ -16,6 +16,7 @@ declare global {
       sheetRead: () => Promise<string | null>
       sheetPreview: (dataPath: string) => Promise<null | Record<string, string | number>>
       sendTemplate: (template: string, path: string, media: string) => Promise<boolean>
+      onTemplateProgress: (callback: (id: number, current: number, total: number) => void) => void
       imageRead: () => Promise<string | null>
       configGet: () => Promise<Config>
       configSet: (Config) => unkown

@@ -16,11 +16,14 @@ const api = {
   onError: (callback: (error: string) => void) =>
     ipcRenderer.on('error', (_event, error) => callback(error)),
   logout: () => ipcRenderer.send('logout'),
-  sendMessage: (num: string, message: string) => ipcRenderer.send('send-message', num, message),
   sheetRead: () => ipcRenderer.invoke('sheet:read'),
   sheetPreview: (dataPath: string) => ipcRenderer.invoke('sheet:preview', dataPath),
   sendTemplate: (template: string, path: string, media: string) =>
-    ipcRenderer.invoke('send-template', template, path, media),
+    ipcRenderer.invoke('template:send', template, path, media),
+  onTemplateProgress: (callback: (id: number, current: number, total: number) => void) =>
+    ipcRenderer.on('template:progress', (_event, id, current, total) =>
+      callback(id, current, total)
+    ),
   imageRead: () => ipcRenderer.invoke('image:read'),
   configGet: () => ipcRenderer.invoke('config:get'),
   configSet: (config: Config) => ipcRenderer.invoke('config:set', config)

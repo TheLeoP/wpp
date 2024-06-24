@@ -97,17 +97,20 @@ function random(min: number, max: number) {
   return Math.floor(Math.random() * (max - min)) + min
 }
 
+let nextId = 0
 async function scheduleMessages(win: BrowserWindow, messages: Message[], media: string) {
   const c = await config
   let i = 0
+  const id = nextId++
   const wait_in_ms = random(c.send_time.min, c.send_time.max)
 
-  const scheduleNextMessage = () => {
+  const scheduleNextMessage = async () => {
     if (i === messages.length) return
 
     const currentMessage = messages[i]
     i++
-    sendMessage(win, currentMessage.telf, currentMessage.message, media)
+    await sendMessage(win, currentMessage.telf, currentMessage.message, media)
+    win.webContents.send('template:progress', id, i, messages.length)
     const _wait_in_ms = random(c.send_time.min, c.send_time.max)
     setTimeout(scheduleNextMessage, _wait_in_ms)
   }
@@ -212,7 +215,7 @@ app.whenReady().then(() => {
     }
     return null
   })
-  ipcMain.handle('send-template', async (_event, template: string, path: string, media: string) => {
+  ipcMain.handle('template:send', async (_event, template: string, path: string, media: string) => {
     const c = await config
     const workbook = xlsx.readFile(path)
     const first_sheet = Object.values(workbook.Sheets)[0]

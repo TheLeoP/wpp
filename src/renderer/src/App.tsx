@@ -201,6 +201,7 @@ function TemplateForm() {
   )
 }
 
+//TODO: show toas if config changed correctly
 function Configuration() {
   const form = useForm<Config>({
     resolver: zodResolver(configSchema),
@@ -325,6 +326,12 @@ function App(): JSX.Element {
       toast({
         title: 'Progreso',
         description: `${percent}% ${loadingMessage}`
+      })
+    })
+    window.api.onTemplateProgress((id, current, total) => {
+      toast({
+        title: 'Enviar progreso',
+        description: `id: ${id} ${current}/${total}`
       })
     })
   }, [])
