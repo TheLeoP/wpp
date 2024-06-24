@@ -26,7 +26,8 @@ const api = {
     ),
   imageRead: () => ipcRenderer.invoke('image:read'),
   configGet: () => ipcRenderer.invoke('config:get'),
-  configSet: (config: Config) => ipcRenderer.invoke('config:set', config)
+  configSet: (config: Config) => ipcRenderer.invoke('config:set', config),
+  errorTelfsGet: () => ipcRenderer.invoke('error:telfs:get')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

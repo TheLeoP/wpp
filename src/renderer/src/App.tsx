@@ -297,6 +297,18 @@ function Configuration() {
   )
 }
 
+function Errors() {
+  const [telfs, setTelfs] = useState<string[]>()
+  useEffect(() => {
+    window.api.errorTelfsGet().then((telfs) => setTelfs(telfs))
+  }, [])
+  return (
+    <div className="h-96 overflow-y-auto">
+      <ul>{telfs && telfs.map((telf, i) => <li key={i}>{telf}</li>)}</ul>
+    </div>
+  )
+}
+
 let isFirstTime = true
 function App(): JSX.Element {
   const [qr, setQr] = useState<string>()
@@ -350,8 +362,8 @@ function App(): JSX.Element {
             <Tabs className="mt-2 flex h-fit w-full flex-col items-center" defaultValue="template">
               <TabsList>
                 <TabsTrigger value="template">Enviar plantilla</TabsTrigger>
-                {/* TODO: collect all the numbers with errors in a single place */}
                 <TabsTrigger value="configuration">Configuración</TabsTrigger>
+                <TabsTrigger value="errors">Errores</TabsTrigger>
               </TabsList>
               <TabsContent
                 value="template"
@@ -361,6 +373,9 @@ function App(): JSX.Element {
               </TabsContent>
               <TabsContent value="configuration">
                 <Configuration />
+              </TabsContent>
+              <TabsContent value="errors">
+                <Errors />
               </TabsContent>
             </Tabs>
             <Button

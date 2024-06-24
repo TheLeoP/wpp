@@ -72,14 +72,19 @@ type Message = {
   message: string
 }
 
+const errorTelfs: string[] = []
+
 async function sendMessage(win: BrowserWindow, telf: string, message: string, media: string) {
   const id = await client.getNumberId(telf)
-  if (!id)
-    return win.webContents.send(
+  if (!id) {
+    errorTelfs.push(telf)
+    win.webContents.send(
       'error',
 
       `El número de teléfono ${telf} no se encuentra registrado en WhatsApp`
     )
+    return
+  }
   const chat = await client.getChatById(id._serialized)
   if (!chat)
     return win.webContents.send(
@@ -258,6 +263,9 @@ app.whenReady().then(() => {
     } catch (err) {
       return err
     }
+  })
+  ipcMain.handle('error:telfs:get', () => {
+    return errorTelfs
   })
 
   app.on('activate', function () {

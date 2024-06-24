@@ -20,6 +20,7 @@ declare global {
       imageRead: () => Promise<string | null>
       configGet: () => Promise<Config>
       configSet: (Config) => unkown
+      errorTelfsGet: () => Promise<string[]>
     }
   }
 }
