@@ -267,7 +267,7 @@ function Configuration() {
           )}
         ></FormField>
 
-        <div className="flex flex-row space-x-2">
+        <div className="mt-2 flex flex-row space-x-2">
           <Button type="submit">Guardar</Button>
           <Button
             type="button"
