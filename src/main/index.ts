@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { Client, LocalAuth, MessageMedia } from 'whatsapp-web.js'
+import { Client, ClientOptions, LocalAuth, MessageMedia } from 'whatsapp-web.js'
 import * as xlsx from 'xlsx'
 import { render } from 'mustache'
 import { promises as a } from 'fs'
@@ -117,7 +117,7 @@ async function scheduleMessages(win: BrowserWindow, messages: Message[], media: 
 
 let client: Client
 function init(win: BrowserWindow) {
-  client = new Client({
+  const opts: ClientOptions = {
     webVersionCache: {
       type: 'remote',
       remotePath:
@@ -126,7 +126,14 @@ function init(win: BrowserWindow) {
     authStrategy: new LocalAuth({
       dataPath: `${app.getPath('userData')}/.wwebjs_auth/`
     })
-  })
+  }
+  if (!is.dev)
+    // HACK: may need to be changed on different computers
+    opts.puppeteer = {
+      executablePath:
+        './resources/app.asar.unpacked/node_modules/puppeteer-core/.local-chromium/win64-1045629/chrome-win/chrome.exe'
+    }
+  client = new Client(opts)
   client.on('loading_screen', (percent, message) => {
     win.webContents.send('loading', percent, message)
   })
