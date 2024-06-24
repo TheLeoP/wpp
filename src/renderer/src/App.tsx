@@ -175,9 +175,17 @@ function TemplateForm() {
                     >
                       Cerrar archivo
                     </Button>
-                    {/*TODO: handle videos*/}
                     {!!media && (
-                      <img className="max-h-64" src={`media://${encodeURIComponent(media)}`} />
+                      <>
+                        {/jpeg$|jgp$|png$|webm$/.test(media) && (
+                          <img className="max-h-64" src={`media://${encodeURIComponent(media)}`} />
+                        )}
+                        {/mp4$|avi$|3gp$|wmv$|mov$|mkv$/.test(media) && (
+                          <video className="max-h-64" controls>
+                            <source src={`media://${encodeURIComponent(media)}`} />
+                          </video>
+                        )}
+                      </>
                     )}
                   </div>
                 </FormControl>
