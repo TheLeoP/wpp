@@ -29,7 +29,7 @@ let config: Promise<Config> = new Promise(async (resolve) => {
       }
       resolve(default_config)
       await a.writeFile(config_path, JSON.stringify(default_config))
-    } else {
+    } else if (is.dev) {
       console.error(err)
     }
   }
