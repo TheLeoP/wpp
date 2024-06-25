@@ -24,7 +24,8 @@ let config: Promise<Config> = new Promise(async (resolve) => {
           min: 0,
           max: 1000
         },
-        telf_col: 'telf'
+        telf_col: 'telf',
+        append_593: true
       }
       resolve(default_config)
       await a.writeFile(config_path, JSON.stringify(default_config))
@@ -238,7 +239,7 @@ app.whenReady().then(() => {
       })
       .map((col) => {
         let telf = col[c.telf_col].toString()
-        if (telf.length == 10) telf = `593${col.telf.toString()}`
+        if (c.append_593 && telf.length == 9) telf = `593${col.telf.toString()}`
         const message = render(template, col)
         return { message, telf }
       })

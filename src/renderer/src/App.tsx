@@ -13,6 +13,7 @@ import {
   FormMessage
 } from '@renderer/components/ui/form'
 import { Input } from '@renderer/components/ui/input'
+import { Checkbox } from '@renderer/components/ui/checkbox'
 import {
   Table,
   TableBody,
@@ -209,7 +210,8 @@ function Configuration() {
         min: 0,
         max: 1000
       },
-      telf_col: 'telf'
+      telf_col: 'telf',
+      append_593: true
     }
   })
   const errors = form.formState.errors
@@ -275,6 +277,23 @@ function Configuration() {
                 los contactos
               </FormDescription>
               {errors.telf_col && <FormMessage>{errors.telf_col.message}</FormMessage>}
+            </FormItem>
+          )}
+        ></FormField>
+
+        <FormField
+          control={form.control}
+          name="append_593"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>¿Usar prefijo 593?:</FormLabel>
+              <FormControl>
+                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+              </FormControl>
+              <FormDescription>
+                ¿Usar prefixo 593 antes de un número de teléfono si este consta de 9 dígitos?
+              </FormDescription>
+              {errors.append_593 && <FormMessage>{errors.append_593.message}</FormMessage>}
             </FormItem>
           )}
         ></FormField>

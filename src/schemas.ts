@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-//TODO: config option for prefixing 593
 export const configSchema = z.object({
   send_time: z
     .object({
@@ -18,6 +17,7 @@ export const configSchema = z.object({
     .refine((send_time) => send_time.min < send_time.max, {
       message: '"Mínimo" debe ser menor a "Máximo"'
     }),
-  telf_col: z.string().min(1, { message: '"Columna teléfono" debe de tener al menos un caracter' })
+  telf_col: z.string().min(1, { message: '"Columna teléfono" debe de tener al menos un caracter' }),
+  append_593: z.boolean()
 })
 export type Config = z.infer<typeof configSchema>
