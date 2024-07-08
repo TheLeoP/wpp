@@ -415,7 +415,7 @@ function App(): JSX.Element {
             <div className="mb-10 text-2xl">
               Vincule su cuenta de WhatsApp utilizando el siguiente código QR:
             </div>
-            <QRCodeSVG value={qr} level="L" size={500} />
+            <QRCodeSVG value={qr} level="L" className="h-64 w-64 lg:h-96 lg:w-96" />
           </div>
         )}
       </div>
