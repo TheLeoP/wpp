@@ -75,8 +75,8 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.4)
       whatsapp-web.js:
-        specifier: ^1.24.0
-        version: 1.24.0(encoding@0.1.13)
+        specifier: github:pedroslopez/whatsapp-web.js#webpack-exodus
+        version: https://codeload.github.com/pedroslopez/whatsapp-web.js/tar.gz/8034e8f5ad7411664eb22173fc68075d2820854e(encoding@0.1.13)
       xlsx:
         specifier: https://cdn.sheetjs.com/xlsx-0.20.2/xlsx-0.20.2.tgz
         version: https://cdn.sheetjs.com/xlsx-0.20.2/xlsx-0.20.2.tgz
@@ -3056,7 +3056,7 @@ packages:
   puppeteer@18.2.1:
     resolution: {integrity: sha512-7+UhmYa7wxPh2oMRwA++k8UGVDxh3YdWFB52r9C3tM81T6BU7cuusUSxImz0GEYSOYUKk/YzIhkQ6+vc0gHbxQ==}
     engines: {node: '>=14.1.0'}
-    deprecated: < 22.5.0 is no longer supported
+    deprecated: < 22.6.4 is no longer supported
 
   qrcode.react@3.1.0:
     resolution: {integrity: sha512-oyF+Urr3oAMUG/OiOuONL3HXM+53wvuH3mtIWQrYmsXoAq0DkvZp2RYUWFSMFtbdOpuS++9v+WAkzNVkMlNW6Q==}
@@ -3564,8 +3564,9 @@ packages:
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
 
-  whatsapp-web.js@1.24.0:
-    resolution: {integrity: sha512-/SHwvZxUmGQJ/JU3CxGeWINCbOoKpFmr5/TFNrWnudWxJsBBofNoXBzgIEZIz4KZwO3EEdKnMtsABFp4jLjwUA==}
+  whatsapp-web.js@https://codeload.github.com/pedroslopez/whatsapp-web.js/tar.gz/8034e8f5ad7411664eb22173fc68075d2820854e:
+    resolution: {tarball: https://codeload.github.com/pedroslopez/whatsapp-web.js/tar.gz/8034e8f5ad7411664eb22173fc68075d2820854e}
+    version: 1.23.1-alpha.5
     engines: {node: '>=18.0.0'}
 
   whatwg-url@5.0.0:
@@ -7475,7 +7476,7 @@ snapshots:
 
   webidl-conversions@3.0.1: {}
 
-  whatsapp-web.js@1.24.0(encoding@0.1.13):
+  whatsapp-web.js@https://codeload.github.com/pedroslopez/whatsapp-web.js/tar.gz/8034e8f5ad7411664eb22173fc68075d2820854e(encoding@0.1.13):
     dependencies:
       '@pedroslopez/moduleraid': 5.0.2
       fluent-ffmpeg: 2.1.2

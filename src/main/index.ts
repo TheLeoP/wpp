@@ -128,9 +128,8 @@ let client: Client
 function init(win: BrowserWindow) {
   const opts: ClientOptions = {
     webVersionCache: {
-      type: 'remote',
-      remotePath:
-        'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html'
+      type: 'local',
+      path: `${app.getPath('userData')}/.wwebjs_cache/`
     },
     authStrategy: new LocalAuth({
       dataPath: `${app.getPath('userData')}/.wwebjs_auth/`
