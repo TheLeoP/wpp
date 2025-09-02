@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { Toaster } from '@renderer/components/ui/toaster'
-import { useToast } from '@renderer/components/ui/use-toast'
+import { Toaster } from '@renderer/components/ui/sonner'
+import { toast } from 'sonner'
 import { Button } from '@renderer/components/ui/button'
 import {
   Form,
@@ -80,7 +80,7 @@ function TemplateForm() {
             <FormItem className="h-fit w-full">
               <FormLabel>Datos:</FormLabel>
               <FormControl>
-                <div className="space-x-2 space-y-2">
+                <div className="space-y-2 space-x-2">
                   <span>{data == '' ? 'Ningún archivo seleccionado' : data}</span>
                   <Button
                     type="button"
@@ -154,7 +154,7 @@ function TemplateForm() {
               <FormItem className="h-fit w-full">
                 <FormLabel>Multimedia:</FormLabel>
                 <FormControl>
-                  <div className="space-x-2 space-y-2">
+                  <div className="space-y-2 space-x-2">
                     <div>{media == '' ? 'Ningún archivo seleccionado' : media}</div>
                     <Button
                       type="button"
@@ -215,12 +215,11 @@ function Configuration() {
     }
   })
   const errors = form.formState.errors
-  const { toast } = useToast()
 
   async function onSubmit(config: Config) {
     const maybe_err = await window.api.configSet(config)
     if (maybe_err) throw maybe_err
-    toast({ title: 'Configuración', description: 'La configuración fue modificada exitosamente' })
+    toast('Configuración', { description: 'La configuración fue modificada exitosamente' })
   }
 
   useEffect(() => {
@@ -329,12 +328,10 @@ function Errors() {
 }
 
 let isFirstTime = true
-function App(): JSX.Element {
+function App(): React.ReactNode {
   const [qr, setQr] = useState<string>()
   const [isAuth, setIsAuth] = useState(false)
   const [isReady, setIsReady] = useState(false)
-
-  const { toast } = useToast()
 
   useEffect(() => {
     if (!isFirstTime) return
@@ -343,10 +340,10 @@ function App(): JSX.Element {
       setQr(qr)
     })
     window.api.onAuthFailure((message: string) => {
-      toast({ title: 'Error de autenticación', description: message, variant: 'destructive' })
+      toast.error('Error de autenticación', { description: message })
     })
     window.api.onError((error: string) => {
-      toast({ title: 'Error', description: error, variant: 'destructive' })
+      toast.error('Error', { description: error })
     })
     window.api.onAuthenticated(() => {
       setIsAuth(true)
@@ -355,14 +352,14 @@ function App(): JSX.Element {
       setIsReady(true)
     })
     window.api.onLoading((percent, loadingMessage) => {
-      toast({
-        title: 'Progreso',
+      toast('Progreso', {
+        id: 'progress',
         description: `${percent}% ${loadingMessage}`
       })
     })
     window.api.onTemplateProgress((id, current, total) => {
-      toast({
-        title: 'Enviar progreso',
+      toast('Enviar progreso', {
+        id: 'sending-progress',
         description: `id: ${id} ${current}/${total}`
       })
     })
