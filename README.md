@@ -1,10 +1,9 @@
-# wpp
+# WPP
 
-An Electron application with React and TypeScript
-
-## Recommended IDE Setup
-
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+<div align="center">
+  <img src="./resources/icon.png" width="150">
+  <div>A simple frontend for <a href="https://github.com/pedroslopez/whatsapp-web.js">whatsapp-web.js</a>.</div>
+</div>
 
 ## Project Setup
 
