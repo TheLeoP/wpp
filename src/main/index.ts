@@ -238,7 +238,9 @@ app.whenReady().then(() => {
       })
       .map((col) => {
         let telf = col[c.telf_col].toString()
-        if (c.append_593 && telf.length == 9) telf = `593${col.telf.toString()}`
+        if (c.prepend_593 && telf.length === 9) telf = `593${telf}`
+        else if (c.prepend_593 && telf.length === 10 && telf[0] === '0')
+          telf = `593${telf.slice(1)}`
         const message = render(template, col)
         return { message, telf }
       })
@@ -249,7 +251,7 @@ app.whenReady().then(() => {
     const workbook = xlsx.readFile(path)
     const first_sheet = Object.values(workbook.Sheets)[0]
     const json_sheet = xlsx.utils.sheet_to_json<Record<string, string | number>>(first_sheet)
-    if (json_sheet.length == 0) return []
+    if (json_sheet.length === 0) return []
     return json_sheet[0]
   })
   ipcMain.handle('config:get', async () => {

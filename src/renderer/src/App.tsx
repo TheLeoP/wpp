@@ -211,7 +211,7 @@ function Configuration() {
         max: 1000
       },
       telf_col: 'telf',
-      append_593: true
+      prepend_593: true
     }
   })
   const errors = form.formState.errors
@@ -292,7 +292,7 @@ function Configuration() {
               <FormDescription>
                 ¿Usar prefixo 593 antes de un número de teléfono si este consta de 9 dígitos?
               </FormDescription>
-              {errors.append_593 && <FormMessage>{errors.append_593.message}</FormMessage>}
+              {errors.prepend_593 && <FormMessage>{errors.prepend_593.message}</FormMessage>}
             </FormItem>
           )}
         ></FormField>
