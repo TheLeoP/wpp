@@ -1,26 +1,9 @@
 import type { ElectronAPI } from '@electron-toolkit/preload'
-import type { Config } from '../schemas'
+import { api } from './index.ts'
 
 declare global {
   interface Window {
     electron: ElectronAPI
-    api: {
-      onQr: (callback: (qr: string) => void) => void
-      onAuthFailure: (callback: (message: string) => void) => void
-      onAuthenticated: (callback: () => void) => void
-      onReady: (callback: () => void) => void
-      onLoading: (callback: (percent: string, loadingMessage: string) => void) => void
-      onError: (callback: (error: string) => void) => void
-      logout: () => void
-      sendMessage: (num: string, message: string) => void
-      sheetRead: () => Promise<string | null>
-      sheetPreview: (dataPath: string) => Promise<null | Record<string, string | number>>
-      sendTemplate: (template: string, path: string, media: string) => Promise<boolean>
-      onTemplateProgress: (callback: (id: number, current: number, total: number) => void) => void
-      imageRead: () => Promise<string | null>
-      configGet: () => Promise<Config>
-      configSet: (Config) => unkown
-      errorTelfsGet: () => Promise<string[]>
-    }
+    api: typeof api
   }
 }

@@ -3,7 +3,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 import type { Config } from '../schemas'
 
 // Custom APIs for renderer
-const api = {
+export const api = {
   onQr: (callback: (qr: string) => void) =>
     ipcRenderer.on('qr', (_event, qr: string) => callback(qr)),
   onAuthFailure: (callback: (message: string) => void) =>
