@@ -28,7 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@renderer/components/u
 
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver } from 'react-hook-form'
 import type { Config } from '../../schemas'
 import { configSchema } from '../../schemas'
 
@@ -38,11 +38,13 @@ const templateSchema = z.object({
   data: z.string().min(1)
 })
 
+type TemplateSchema = z.infer<typeof templateSchema>
+
 function TemplateForm() {
   const [preview, setPreview] = useState<Record<string, string | number>>()
 
-  const form = useForm<z.infer<typeof templateSchema>>({
-    resolver: zodResolver(templateSchema),
+  const form = useForm<TemplateSchema>({
+    resolver: zodResolver(templateSchema) as Resolver<TemplateSchema>,
     defaultValues: {
       template: '',
       data: '',
@@ -50,7 +52,7 @@ function TemplateForm() {
     }
   })
 
-  async function onSubmit(values: z.infer<typeof templateSchema>) {
+  async function onSubmit(values: TemplateSchema) {
     const { template, data, media } = values
     const ok = await window.api.sendTemplate(template, data, media)
     if (!ok) throw new Error('There was an error sending the template')
@@ -204,7 +206,7 @@ function TemplateForm() {
 
 function Configuration() {
   const form = useForm<Config>({
-    resolver: zodResolver(configSchema),
+    resolver: zodResolver(configSchema) as Resolver<Config>,
     defaultValues: {
       send_time: {
         min: 0,
@@ -282,7 +284,7 @@ function Configuration() {
 
         <FormField
           control={form.control}
-          name="append_593"
+          name="prepend_593"
           render={({ field }) => (
             <FormItem>
               <FormLabel>¿Usar prefijo 593?:</FormLabel>

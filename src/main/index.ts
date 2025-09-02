@@ -5,7 +5,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { Client, ClientOptions, LocalAuth, MessageMedia } from 'whatsapp-web.js'
 import * as xlsx from 'xlsx'
-import render from 'mustache'
+import mustache from 'mustache'
 import { promises as a } from 'fs'
 import type { Config } from '../schemas'
 import { configSchema } from '../schemas'
@@ -25,7 +25,7 @@ let config: Promise<Config> = new Promise(async (resolve) => {
           max: 1000
         },
         telf_col: 'telf',
-        append_593: true
+        prepend_593: true
       }
       resolve(default_config)
       await a.writeFile(config_path, JSON.stringify(default_config))
@@ -241,7 +241,7 @@ app.whenReady().then(() => {
         if (c.prepend_593 && telf.length === 9) telf = `593${telf}`
         else if (c.prepend_593 && telf.length === 10 && telf[0] === '0')
           telf = `593${telf.slice(1)}`
-        const message = render(template, col)
+        const message = mustache.render(template, col)
         return { message, telf }
       })
     await scheduleMessages(mainWindow, messages, media)
