@@ -125,7 +125,7 @@ async function scheduleMessages(win: BrowserWindow, messages: Message[], media: 
 
 let client: Client
 let authenticated = false
-let qr: string
+let qr: string | null = null
 async function init(win: BrowserWindow) {
   const opts: ClientOptions = {
     webVersionCache: {
@@ -283,13 +283,21 @@ app.whenReady().then(() => {
     return errorTelfs
   })
   ipcMain.handle('clientInfo:get', () => {
-    return client.info
+    return client.info || null
   })
-  ipcMain.handle('authenticated:get', () => {
+  ipcMain.handle('isAuthenticated:get', () => {
     return authenticated
   })
   ipcMain.handle('qr:get', () => {
     return qr
+  })
+  ipcMain.handle('profilePicUrl:get', async (_, phone: string) => {
+    const id = await client.getNumberId(phone)
+    if (!id) {
+      throw new Error('No se pudo obtener la foto de perfil')
+    }
+    const url = await client.getProfilePicUrl(id._serialized)
+    return url
   })
 
   app.on('activate', function () {

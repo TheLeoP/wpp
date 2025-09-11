@@ -349,6 +349,15 @@ function App(): React.ReactNode {
       return await window.api.clientInfoGet()
     }
   })
+  const { data: profilePicUrl } = useQuery({
+    queryKey: ['profilePicUrl'],
+    queryFn: async () => {
+      if (!clientInfo) return
+
+      return await window.api.profilePicUrlGet(clientInfo.wid.user)
+    },
+    enabled: !!clientInfo
+  })
 
   useEffect(() => {
     const offQr = window.api.onQr(async (qr) => {
@@ -405,10 +414,19 @@ function App(): React.ReactNode {
         {clientInfo && isAuthenticated && (
           <div className="h-full w-full">
             <Tabs className="mt-2 flex h-fit w-full flex-col items-center" defaultValue="template">
-              <div className="flex w-full justify-between px-20">
-                <div>
-                  <div>Nombre: {clientInfo.pushname}</div>
-                  <div>Teléfono: {clientInfo.wid.user}</div>
+              <div className="flex w-full max-w-9/10 items-center justify-between">
+                <div className="flex">
+                  <div className="overflow-hidden rounded-full">
+                    {profilePicUrl && <img className="w-16" src={profilePicUrl} />}
+                  </div>
+                  <div className="flex flex-col justify-center ps-2">
+                    <div>
+                      <span className="font-bold">Nombre</span>: {clientInfo.pushname}
+                    </div>
+                    <div>
+                      <span className="font-bold">Teléfono</span>: {clientInfo.wid.user}
+                    </div>
+                  </div>
                 </div>
 
                 <TabsList>

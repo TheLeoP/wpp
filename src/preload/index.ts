@@ -58,7 +58,9 @@ export const api = {
   errorTelfsGet: () => ipcRenderer.invoke('error:telfs:get') as Promise<string[]>,
   clientInfoGet: () => ipcRenderer.invoke('clientInfo:get') as Promise<null | ClientInfo>,
   isAuthenticatedGet: () => ipcRenderer.invoke('isAuthenticated:get') as Promise<null | boolean>,
-  qrGet: () => ipcRenderer.invoke('qr:get') as Promise<null | string>
+  qrGet: () => ipcRenderer.invoke('qr:get') as Promise<null | string>,
+  profilePicUrlGet: (phone: string) =>
+    ipcRenderer.invoke('profilePicUrl:get', phone) as Promise<null | string>
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
