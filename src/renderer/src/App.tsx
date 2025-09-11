@@ -31,7 +31,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, type Resolver } from 'react-hook-form'
 import type { Config } from '../../schemas'
 import { configSchema } from '../../schemas'
-import { type ClientInfo } from 'whatsapp-web.js'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 const templateSchema = z.object({
   template: z.string().min(1),
@@ -53,8 +53,7 @@ function TemplateForm() {
     }
   })
 
-  async function onSubmit(values: TemplateSchema) {
-    const { template, data, media } = values
+  async function onSubmit({ template, data, media }: TemplateSchema) {
     const ok = await window.api.sendTemplate(template, data, media)
     if (!ok) throw new Error('There was an error sending the template')
     form.reset()
@@ -331,25 +330,44 @@ function Errors() {
 }
 
 function App(): React.ReactNode {
-  const [qr, setQr] = useState<null | string>(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [clientInfo, setClientInfo] = useState<null | ClientInfo>(null)
+  const queryClient = useQueryClient()
+  const { data: qr } = useQuery({
+    queryKey: ['qr'],
+    queryFn: async () => {
+      return await window.api.qrGet()
+    }
+  })
+  const { data: isAuthenticated } = useQuery({
+    queryKey: ['isAuthenticated'],
+    queryFn: async () => {
+      return await window.api.isAuthenticatedGet()
+    }
+  })
+  const { data: clientInfo } = useQuery({
+    queryKey: ['clientInfo'],
+    queryFn: async () => {
+      return await window.api.clientInfoGet()
+    }
+  })
 
   useEffect(() => {
-    const offQr = window.api.onQr((qr: string | null) => {
-      setQr(qr)
+    const offQr = window.api.onQr(async (qr) => {
+      await queryClient.cancelQueries({ queryKey: ['qr'] })
+      queryClient.setQueryData(['qr'], () => qr)
     })
     const offAuthFailure = window.api.onAuthFailure((message: string) => {
       toast.error('Error de autenticación', { description: message })
     })
-    const offError = window.api.onError((error: string) => {
+    const offError = window.api.onError((error) => {
       toast.error('Error', { description: error })
     })
-    const offAuthenticated = window.api.onAuthenticated((isAuthenticated) => {
-      setIsAuthenticated(isAuthenticated)
+    const offAuthenticated = window.api.onAuthenticated(async (isAuthenticated) => {
+      await queryClient.cancelQueries({ queryKey: ['isAuthenticated'] })
+      queryClient.setQueryData(['isAuthenticated'], () => isAuthenticated)
     })
-    const offReady = window.api.onReady((info) => {
-      setClientInfo(info)
+    const offReady = window.api.onReady(async (info) => {
+      await queryClient.cancelQueries({ queryKey: ['clientInfo'] })
+      queryClient.setQueryData(['clientInfo'], () => info)
     })
     const offLoading = window.api.onLoading((percent, loadingMessage) => {
       toast('Progreso', {
@@ -434,7 +452,6 @@ function App(): React.ReactNode {
           </div>
         )}
       </div>
-
       <Toaster />
     </>
   )

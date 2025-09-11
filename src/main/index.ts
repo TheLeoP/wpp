@@ -124,6 +124,8 @@ async function scheduleMessages(win: BrowserWindow, messages: Message[], media: 
 }
 
 let client: Client
+let authenticated = false
+let qr: string
 async function init(win: BrowserWindow) {
   const opts: ClientOptions = {
     webVersionCache: {
@@ -144,17 +146,20 @@ async function init(win: BrowserWindow) {
   client.on('loading_screen', (percent, message) => {
     win.webContents.send('loading', percent, message)
   })
-  client.on('qr', (qr) => {
+  client.on('qr', (newQr) => {
+    qr = newQr
     win.webContents.send('qr', qr)
   })
   client.on('auth_failure', (message) => {
     win.webContents.send('auth-failure', message)
   })
   client.on('authenticated', () => {
-    win.webContents.send('authenticated', true)
+    authenticated = true
+    win.webContents.send('authenticated', authenticated)
   })
   client.on('disconnected', () => {
-    win.webContents.send('authenticated', false)
+    authenticated = false
+    win.webContents.send('authenticated', authenticated)
   })
   client.on('ready', async () => {
     win.webContents.send('ready', client.info)
@@ -162,7 +167,8 @@ async function init(win: BrowserWindow) {
 
   ipcMain.once('logout', async () => {
     win.webContents.send('qr', null)
-    win.webContents.send('authenticated', null)
+    authenticated = false
+    win.webContents.send('authenticated', authenticated)
     win.webContents.send('ready', null)
     await client.logout()
     await client.destroy()
@@ -275,6 +281,15 @@ app.whenReady().then(() => {
   })
   ipcMain.handle('error:telfs:get', () => {
     return errorTelfs
+  })
+  ipcMain.handle('clientInfo:get', () => {
+    return client.info
+  })
+  ipcMain.handle('authenticated:get', () => {
+    return authenticated
+  })
+  ipcMain.handle('qr:get', () => {
+    return qr
   })
 
   app.on('activate', function () {
