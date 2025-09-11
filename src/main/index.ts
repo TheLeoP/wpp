@@ -204,8 +204,7 @@ app.whenReady().then(() => {
   protocol.handle('media', (req) => {
     let filePath = req.url.slice('media://'.length)
     filePath = decodeURIComponent(filePath)
-    const _path = fileURLToPath(`file://${filePath}`)
-    return net.fetch(_path)
+    return net.fetch(`file://${filePath}`)
   })
 
   ipcMain.handle('sheet:read', async () => {
