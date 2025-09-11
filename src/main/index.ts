@@ -157,11 +157,13 @@ async function init(win: BrowserWindow) {
     win.webContents.send('authenticated', false)
   })
   client.on('ready', async () => {
-    win.webContents.send('ready')
+    win.webContents.send('ready', client.info)
   })
 
   ipcMain.once('logout', async () => {
     win.webContents.send('qr', null)
+    win.webContents.send('authenticated', null)
+    win.webContents.send('ready', null)
     await client.logout()
     await client.destroy()
     await init(win)

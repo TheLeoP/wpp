@@ -31,6 +31,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, type Resolver } from 'react-hook-form'
 import type { Config } from '../../schemas'
 import { configSchema } from '../../schemas'
+import { type ClientInfo } from 'whatsapp-web.js'
 
 const templateSchema = z.object({
   template: z.string().min(1),
@@ -331,8 +332,8 @@ function Errors() {
 
 function App(): React.ReactNode {
   const [qr, setQr] = useState<null | string>(null)
-  const [isAuth, setIsAuth] = useState(false)
-  const [isReady, setIsReady] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [clientInfo, setClientInfo] = useState<null | ClientInfo>(null)
 
   useEffect(() => {
     const offQr = window.api.onQr((qr: string | null) => {
@@ -344,11 +345,11 @@ function App(): React.ReactNode {
     const offError = window.api.onError((error: string) => {
       toast.error('Error', { description: error })
     })
-    const offAuthenticated = window.api.onAuthenticated(() => {
-      setIsAuth(true)
+    const offAuthenticated = window.api.onAuthenticated((isAuthenticated) => {
+      setIsAuthenticated(isAuthenticated)
     })
-    const offReady = window.api.onReady(() => {
-      setIsReady(true)
+    const offReady = window.api.onReady((info) => {
+      setClientInfo(info)
     })
     const offLoading = window.api.onLoading((percent, loadingMessage) => {
       toast('Progreso', {
@@ -377,20 +378,37 @@ function App(): React.ReactNode {
   return (
     <>
       <div className="flex h-screen flex-col items-center justify-center">
-        {!isReady && (
+        {!clientInfo && (
           <div className="mt-2 w-full self-center text-center text-4xl">
             Iniciando WhatsApp. Espere
           </div>
         )}
 
-        {isReady && isAuth && (
-          <div className="flex h-full w-full flex-col items-center">
+        {clientInfo && isAuthenticated && (
+          <div className="h-full w-full">
             <Tabs className="mt-2 flex h-fit w-full flex-col items-center" defaultValue="template">
-              <TabsList>
-                <TabsTrigger value="template">Enviar plantilla</TabsTrigger>
-                <TabsTrigger value="configuration">Configuración</TabsTrigger>
-                <TabsTrigger value="errors">Errores</TabsTrigger>
-              </TabsList>
+              <div className="flex w-full justify-between px-20">
+                <div>
+                  <div>Nombre: {clientInfo.pushname}</div>
+                  <div>Teléfono: {clientInfo.wid.user}</div>
+                </div>
+
+                <TabsList>
+                  <TabsTrigger value="template">Enviar plantilla</TabsTrigger>
+                  <TabsTrigger value="configuration">Configuración</TabsTrigger>
+                  <TabsTrigger value="errors">Errores</TabsTrigger>
+                </TabsList>
+
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    window.api.logout()
+                  }}
+                >
+                  Cerrar sesión
+                </Button>
+              </div>
+
               <TabsContent
                 value="template"
                 className="flex h-full w-full flex-col items-center justify-center"
@@ -404,20 +422,10 @@ function App(): React.ReactNode {
                 <Errors />
               </TabsContent>
             </Tabs>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                window.api.logout()
-                setIsAuth(false)
-                setIsReady(false)
-              }}
-            >
-              Cerrar sesión
-            </Button>
           </div>
         )}
 
-        {!isAuth && qr && (
+        {!isAuthenticated && qr && (
           <div className="flex flex-col items-center">
             <div className="mb-10 text-2xl">
               Vincule su cuenta de WhatsApp utilizando el siguiente código QR:

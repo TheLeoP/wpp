@@ -1,8 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type { Config } from '../schemas'
+import { type ClientInfo } from 'whatsapp-web.js'
 
-// Custom APIs for renderer
 export const api = {
   onQr: (callback: (qr: null | string) => void) => {
     const f = (_: Electron.IpcRendererEvent, qr: null | string) => callback(qr)
@@ -20,8 +20,8 @@ export const api = {
     ipcRenderer.on('authenticated', f)
     return () => ipcRenderer.off('authenticated', f)
   },
-  onReady: (callback: () => void) => {
-    const f = (_: Electron.IpcRendererEvent) => callback()
+  onReady: (callback: (info: ClientInfo) => void) => {
+    const f = (_: Electron.IpcRendererEvent, info: ClientInfo) => callback(info)
     ipcRenderer.on('ready', f)
     return () => ipcRenderer.off('ready', f)
   },
