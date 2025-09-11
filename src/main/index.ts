@@ -10,11 +10,11 @@ import { promises as a } from 'fs'
 import type { Config } from '../schemas'
 import { configSchema } from '../schemas'
 
-const config_path = `${app.getPath('userData')}/config.json`
+const configPath = `${app.getPath('userData')}/config.json`
 
 let config: Promise<Config> = new Promise(async (resolve) => {
   try {
-    const content = (await a.readFile(config_path, 'utf-8')).toString()
+    const content = (await a.readFile(configPath, 'utf-8')).toString()
     const parsed = configSchema.parse(JSON.parse(content))
     resolve(parsed)
   } catch (err) {
@@ -28,7 +28,7 @@ let config: Promise<Config> = new Promise(async (resolve) => {
         prepend_593: true
       }
       resolve(default_config)
-      await a.writeFile(config_path, JSON.stringify(default_config))
+      await a.writeFile(configPath, JSON.stringify(default_config))
     } else if (is.dev) {
       console.error(err)
     }
@@ -36,7 +36,6 @@ let config: Promise<Config> = new Promise(async (resolve) => {
 })
 
 function createWindow(): BrowserWindow {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
     show: false,
     autoHideMenuBar: true,
@@ -125,7 +124,7 @@ async function scheduleMessages(win: BrowserWindow, messages: Message[], media: 
 }
 
 let client: Client
-function init(win: BrowserWindow) {
+async function init(win: BrowserWindow) {
   const opts: ClientOptions = {
     webVersionCache: {
       type: 'local',
@@ -152,16 +151,22 @@ function init(win: BrowserWindow) {
     win.webContents.send('auth-failure', message)
   })
   client.on('authenticated', () => {
-    win.webContents.send('authenticated')
+    win.webContents.send('authenticated', true)
+  })
+  client.on('disconnected', () => {
+    win.webContents.send('authenticated', false)
   })
   client.on('ready', async () => {
     win.webContents.send('ready')
   })
 
-  ipcMain.on('logout', () => {
-    client.logout()
+  ipcMain.once('logout', async () => {
+    win.webContents.send('qr', null)
+    await client.logout()
+    await client.destroy()
+    await init(win)
   })
-  client.initialize()
+  await client.initialize()
 }
 
 protocol.registerSchemesAsPrivileged([
@@ -260,7 +265,7 @@ app.whenReady().then(() => {
   ipcMain.handle('config:set', async (_event, _config: Config) => {
     config = Promise.resolve(_config)
     try {
-      a.writeFile(config_path, JSON.stringify(await config), 'utf-8')
+      a.writeFile(configPath, JSON.stringify(await config), 'utf-8')
       return
     } catch (err) {
       return err

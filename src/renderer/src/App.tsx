@@ -329,42 +329,49 @@ function Errors() {
   )
 }
 
-let isFirstTime = true
 function App(): React.ReactNode {
-  const [qr, setQr] = useState<string>()
+  const [qr, setQr] = useState<null | string>(null)
   const [isAuth, setIsAuth] = useState(false)
   const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
-    if (!isFirstTime) return
-    isFirstTime = false
-    window.api.onQr((qr: string) => {
+    const offQr = window.api.onQr((qr: string | null) => {
       setQr(qr)
     })
-    window.api.onAuthFailure((message: string) => {
+    const offAuthFailure = window.api.onAuthFailure((message: string) => {
       toast.error('Error de autenticación', { description: message })
     })
-    window.api.onError((error: string) => {
+    const offError = window.api.onError((error: string) => {
       toast.error('Error', { description: error })
     })
-    window.api.onAuthenticated(() => {
+    const offAuthenticated = window.api.onAuthenticated(() => {
       setIsAuth(true)
     })
-    window.api.onReady(() => {
+    const offReady = window.api.onReady(() => {
       setIsReady(true)
     })
-    window.api.onLoading((percent, loadingMessage) => {
+    const offLoading = window.api.onLoading((percent, loadingMessage) => {
       toast('Progreso', {
         id: 'progress',
         description: `${percent}% ${loadingMessage}`
       })
     })
-    window.api.onTemplateProgress((id, current, total) => {
+    const offTemplateProgress = window.api.onTemplateProgress((id, current, total) => {
       toast('Enviar progreso', {
         id: 'sending-progress',
         description: `id: ${id} ${current}/${total}`
       })
     })
+
+    return () => {
+      offQr()
+      offAuthFailure()
+      offError()
+      offAuthenticated()
+      offReady()
+      offLoading()
+      offTemplateProgress()
+    }
   }, [])
 
   return (
@@ -375,7 +382,8 @@ function App(): React.ReactNode {
             Iniciando WhatsApp. Espere
           </div>
         )}
-        {isAuth && (
+
+        {isReady && isAuth && (
           <div className="flex h-full w-full flex-col items-center">
             <Tabs className="mt-2 flex h-fit w-full flex-col items-center" defaultValue="template">
               <TabsList>
@@ -418,6 +426,7 @@ function App(): React.ReactNode {
           </div>
         )}
       </div>
+
       <Toaster />
     </>
   )
