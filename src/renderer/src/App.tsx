@@ -181,7 +181,7 @@ function TemplateForm() {
                     </Button>
                     {!!media && (
                       <>
-                        {/jpeg$|jgp$|png$|webm$/.test(media) && (
+                        {/jpeg$|jpg$|png$|webm$/.test(media) && (
                           <img className="max-h-64" src={`media://${encodeURIComponent(media)}`} />
                         )}
                         {/mp4$|avi$|3gp$|wmv$|mov$|mkv$/.test(media) && (
