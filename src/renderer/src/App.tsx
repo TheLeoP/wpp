@@ -415,9 +415,15 @@ function App(): React.ReactNode {
           <div className="h-full w-full">
             <Tabs className="mt-2 flex h-fit w-full flex-col items-center" defaultValue="template">
               <div className="flex w-full max-w-9/10 items-center justify-between">
-                <div className="flex">
+                <div className="flex h-16">
                   <div className="overflow-hidden rounded-full">
-                    {profilePicUrl && <img className="w-16" src={profilePicUrl} />}
+                    {profilePicUrl ? (
+                      <img className="h-16" src={profilePicUrl} />
+                    ) : (
+                      <div className="flex size-16 items-center justify-center bg-slate-200 text-xl font-bold">
+                        {clientInfo.pushname[0]}
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-col justify-center ps-2">
                     <div>
