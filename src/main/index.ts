@@ -310,7 +310,11 @@ app.whenReady().then(() => {
         return null
       }
 
-      return mustache.render(template, data)
+      try {
+        return mustache.render(template, data)
+      } catch (e) {
+        return null
+      }
     }
   )
 
