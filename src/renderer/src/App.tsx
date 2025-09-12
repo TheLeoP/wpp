@@ -53,7 +53,7 @@ function TemplateForm() {
   const queryClient = useQueryClient()
 
   const data = form.watch('data')
-  const { data: preview } = useQuery({
+  const { data: dataPreview } = useQuery({
     queryKey: ['sheetPreview'],
     queryFn: async () => {
       return await window.api.sheetPreview(data)
@@ -65,142 +65,177 @@ function TemplateForm() {
 
     queryClient.setQueryData(['sheetPreview'], () => null)
   }, [data])
+
+  const template = form.watch('template')
+  const { data: templatePreview } = useQuery({
+    queryKey: ['templatePreview', template, dataPreview],
+    queryFn: async () => {
+      if (!dataPreview) return
+
+      return await window.api.templatePreview(template, dataPreview)
+    },
+    enabled: !!template && !!dataPreview
+  })
   const media = form.watch('media')
 
   return (
     <Form {...form}>
       <form
-        className="my-2 flex h-full w-2/3 flex-col items-center space-y-2"
+        className="my-2 flex h-full w-full flex-col space-y-2 p-1"
         onSubmit={form.handleSubmit(async ({ template, data, media }: TemplateSchema) => {
           const ok = await window.api.sendTemplate(template, data, media)
           if (!ok) throw new Error('There was an error sending the template')
           form.reset()
         })}
       >
-        <FormField
-          control={form.control}
-          name="data"
-          render={({ field }) => (
-            <FormItem className="h-fit w-full">
-              <FormLabel>Datos:</FormLabel>
-              <FormControl>
-                <div className="space-y-2 space-x-2">
-                  <span>{data == '' ? 'Ningún archivo seleccionado' : data}</span>
-                  <Button
-                    type="button"
-                    onClick={async () => {
-                      const path = await window.api.sheetRead()
-                      if (!path) return
-                      form.setValue('data', path)
-                    }}
-                    {...field}
-                  >
-                    Leer archivo
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    type="button"
-                    onClick={async () => {
-                      form.setValue('data', '')
-                    }}
-                  >
-                    Cerrar archivo
-                  </Button>
+        <div className="flex space-x-2">
+          <div className="flex max-w-1/2 grow flex-col gap-2">
+            <FormField
+              control={form.control}
+              name="data"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Datos:</FormLabel>
+                  <FormControl>
+                    <div className="flex h-128 flex-col space-y-2">
+                      <div className="flex space-x-2">
+                        <div className="grow truncate">{data || 'Ningún archivo seleccionado'}</div>
+                        <Button
+                          className="grow"
+                          type="button"
+                          onClick={async () => {
+                            const path = await window.api.sheetRead()
+                            if (!path) return
+                            form.setValue('data', path)
+                          }}
+                          {...field}
+                        >
+                          Leer archivo
+                        </Button>
+                        <Button
+                          className="grow"
+                          variant="secondary"
+                          type="button"
+                          onClick={async () => {
+                            form.setValue('data', '')
+                          }}
+                        >
+                          Cerrar archivo
+                        </Button>
+                      </div>
 
-                  <Table>
-                    <TableCaption>Valores encontrados en la primera columna</TableCaption>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="border">Encabezados</TableHead>
-                        <TableHead className="border">Valores</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {preview &&
-                        Object.entries(preview).map(([key, value]) => (
-                          <TableRow key={key}>
-                            <TableCell className="border">{key}</TableCell>
-                            <TableCell className="border">{value}</TableCell>
+                      <Table>
+                        <TableCaption>Valores encontrados en la primera columna</TableCaption>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-1/3 border">Encabezados</TableHead>
+                            <TableHead className="w-2/3 border">Valores</TableHead>
                           </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </FormControl>
-              <FormDescription>Datos para la plantilla</FormDescription>
-            </FormItem>
-          )}
-        />
+                        </TableHeader>
+                        <TableBody>
+                          {dataPreview &&
+                            Object.entries(dataPreview).map(([key, value]) => (
+                              <TableRow key={key}>
+                                <TableCell className="border">{key}</TableCell>
+                                <TableCell className="border">{value}</TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="font-medium">
+              Enviar
+            </Button>
+          </div>
 
-        <div className="flex w-full flex-row space-x-2">
-          <FormField
-            control={form.control}
-            name="template"
-            render={({ field }) => (
-              <FormItem className="h-fit w-full">
-                <FormLabel>Plantilla:</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Hola, {{nombre}}"
-                    {...field}
-                    className="h-96 resize-none border"
-                    required
-                  ></Textarea>
-                </FormControl>
-                <FormDescription>Plantilla del mensaje a enviar</FormDescription>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="media"
-            render={({ field }) => (
-              <FormItem className="h-fit w-full">
-                <FormLabel>Multimedia:</FormLabel>
-                <FormControl>
-                  <div className="space-y-2 space-x-2">
-                    <div>{media == '' ? 'Ningún archivo seleccionado' : media}</div>
-                    <Button
-                      type="button"
-                      onClick={async () => {
-                        const path = await window.api.imageRead()
-                        if (!path) return
-                        form.setValue('media', path)
-                      }}
+          <div className="flex max-w-1/2 grow flex-col">
+            <FormField
+              control={form.control}
+              name="template"
+              render={({ field }) => (
+                <FormItem className="flex grow flex-col">
+                  <FormLabel>Plantilla:</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Hola, {{nombre}}"
                       {...field}
-                    >
-                      Leer archivo
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      type="button"
-                      onClick={async () => {
-                        form.setValue('media', '')
-                      }}
-                    >
-                      Cerrar archivo
-                    </Button>
-                    {!!media && (
-                      <>
-                        {/jpeg$|jpg$|png$|webm$/.test(media) && (
-                          <img className="max-h-64" src={`media://${encodeURIComponent(media)}`} />
-                        )}
-                        {/mp4$|avi$|3gp$|wmv$|mov$|mkv$/.test(media) && (
-                          <video className="max-h-64" controls>
-                            <source src={`media://${encodeURIComponent(media)}`} />
-                          </video>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </FormControl>
-                <FormDescription>Archivo multimedia a enviar con el mensaje</FormDescription>
-              </FormItem>
-            )}
-          />
-        </div>
+                      className="h-44 resize-none border"
+                      required
+                    ></Textarea>
+                  </FormControl>
+                  <FormDescription>Plantilla del mensaje a enviar</FormDescription>
 
-        <Button type="submit">Enviar</Button>
+                  <div className="text-sm font-medium">Vista previa:</div>
+                  <div className="h-44 rounded-md border border-slate-200 px-3 py-2 text-sm">
+                    {templatePreview}
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="media"
+              render={({ field }) => (
+                <FormItem className="flex h-64 grow flex-col pt-2">
+                  <FormLabel>Multimedia:</FormLabel>
+                  <FormControl>
+                    <div className="flex flex-col space-y-2">
+                      <div className="flex space-x-2">
+                        <div className="grow truncate">
+                          {media || 'Ningún archivo seleccionado'}
+                        </div>
+                        <Button
+                          className="grow"
+                          type="button"
+                          onClick={async () => {
+                            const path = await window.api.imageRead()
+                            if (!path) return
+                            form.setValue('media', path)
+                          }}
+                          {...field}
+                        >
+                          Leer archivo
+                        </Button>
+                        <Button
+                          className="grow"
+                          variant="secondary"
+                          type="button"
+                          onClick={async () => {
+                            form.setValue('media', '')
+                          }}
+                        >
+                          Cerrar archivo
+                        </Button>
+                      </div>
+
+                      {!!media && (
+                        <>
+                          {/jpeg$|jpg$|png$|webm$/.test(media) && (
+                            <img
+                              className="max-h-64 max-w-64"
+                              src={`media://${encodeURIComponent(media)}`}
+                            />
+                          )}
+                          {/mp4$|avi$|3gp$|wmv$|mov$|mkv$/.test(media) && (
+                            <video className="max-h-64 max-w-64" controls>
+                              <source src={`media://${encodeURIComponent(media)}`} />
+                            </video>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormDescription>Archivo multimedia a enviar con el mensaje</FormDescription>
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
       </form>
     </Form>
   )
@@ -415,7 +450,7 @@ function App(): React.ReactNode {
 
         {clientInfo && isAuthenticated && (
           <div className="h-full w-full">
-            <Tabs className="mt-2 flex h-fit w-full flex-col items-center" defaultValue="template">
+            <Tabs className="mt-2 flex w-full flex-col items-center" defaultValue="template">
               <div className="flex w-full max-w-9/10 items-center justify-between">
                 <div className="flex h-16">
                   <div className="overflow-hidden rounded-full">
@@ -474,7 +509,7 @@ function App(): React.ReactNode {
             <div className="mb-10 text-2xl">
               Vincule su cuenta de WhatsApp utilizando el siguiente código QR:
             </div>
-            <QRCodeSVG value={qr} level="L" className="h-64 w-64 lg:h-96 lg:w-96" />
+            <QRCodeSVG value={qr} level="L" className="size-64 lg:size-96" />
           </div>
         )}
       </div>

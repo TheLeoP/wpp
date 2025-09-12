@@ -232,7 +232,7 @@ app.whenReady().then(() => {
     }
     return null
   })
-  ipcMain.handle('template:send', async (_event, template: string, path: string, media: string) => {
+  ipcMain.handle('template:send', async (_, template: string, path: string, media: string) => {
     const c = await config
     const workbook = xlsx.readFile(path)
     const first_sheet = Object.values(workbook.Sheets)[0]
@@ -242,7 +242,7 @@ app.whenReady().then(() => {
         if (!col[c.telf_col]) {
           mainWindow.webContents.send(
             'error',
-            `La columna número ${i + 1} no contiene un número de teléfono`
+            `La columna número ${i + 1} no contiene un número de teléfono (una columna con el nombre ${c.telf_col})`
           )
           return false
         }
@@ -259,7 +259,7 @@ app.whenReady().then(() => {
     await scheduleMessages(mainWindow, messages, media)
     return true
   })
-  ipcMain.handle('sheet:preview', async (_event, path: string) => {
+  ipcMain.handle('sheet:preview', async (_, path: string) => {
     const workbook = xlsx.readFile(path)
     const first_sheet = Object.values(workbook.Sheets)[0]
     const json_sheet = xlsx.utils.sheet_to_json<Record<string, string | number>>(first_sheet)
@@ -269,11 +269,11 @@ app.whenReady().then(() => {
   ipcMain.handle('config:get', async () => {
     return await config
   })
-  ipcMain.handle('config:set', async (_event, _config: Config) => {
+  ipcMain.handle('config:set', async (_, _config: Config) => {
     config = Promise.resolve(_config)
     try {
       a.writeFile(configPath, JSON.stringify(await config), 'utf-8')
-      return
+      return null
     } catch (err) {
       return err
     }
@@ -298,6 +298,21 @@ app.whenReady().then(() => {
     const url = await client.getProfilePicUrl(id._serialized)
     return url
   })
+  ipcMain.handle(
+    'template:preview',
+    async (_, template: string, data: Record<string, string | number>) => {
+      const c = await config
+      if (!data[c.telf_col]) {
+        mainWindow.webContents.send(
+          'error',
+          `La primera columna no contiene un número de teléfono (una columna con el nombre ${c.telf_col})`
+        )
+        return null
+      }
+
+      return mustache.render(template, data)
+    }
+  )
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

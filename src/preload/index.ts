@@ -60,7 +60,9 @@ export const api = {
   isAuthenticatedGet: () => ipcRenderer.invoke('isAuthenticated:get') as Promise<null | boolean>,
   qrGet: () => ipcRenderer.invoke('qr:get') as Promise<null | string>,
   profilePicUrlGet: (phone: string) =>
-    ipcRenderer.invoke('profilePicUrl:get', phone) as Promise<null | string>
+    ipcRenderer.invoke('profilePicUrl:get', phone) as Promise<null | string>,
+  templatePreview: (template: string, data: Record<string, string | number>) =>
+    ipcRenderer.invoke('template:preview', template, data) as Promise<null | string>
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
