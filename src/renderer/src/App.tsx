@@ -42,8 +42,6 @@ const templateSchema = z.object({
 type TemplateSchema = z.infer<typeof templateSchema>
 
 function TemplateForm() {
-  const [preview, setPreview] = useState<Record<string, string | number>>()
-
   const form = useForm<TemplateSchema>({
     resolver: zodResolver(templateSchema) as Resolver<TemplateSchema>,
     defaultValues: {
@@ -52,20 +50,20 @@ function TemplateForm() {
       media: ''
     }
   })
-
-  async function onSubmit({ template, data, media }: TemplateSchema) {
-    const ok = await window.api.sendTemplate(template, data, media)
-    if (!ok) throw new Error('There was an error sending the template')
-    form.reset()
-  }
+  const queryClient = useQueryClient()
 
   const data = form.watch('data')
+  const { data: preview } = useQuery({
+    queryKey: ['sheetPreview'],
+    queryFn: async () => {
+      return await window.api.sheetPreview(data)
+    },
+    enabled: !!data
+  })
   useEffect(() => {
-    if (!data || data === '') return setPreview({})
-    window.api.sheetPreview(data).then((preview) => {
-      if (!preview) return
-      setPreview(preview)
-    })
+    if (data) return
+
+    queryClient.setQueryData(['sheetPreview'], () => null)
   }, [data])
   const media = form.watch('media')
 
@@ -73,7 +71,11 @@ function TemplateForm() {
     <Form {...form}>
       <form
         className="my-2 flex h-full w-2/3 flex-col items-center space-y-2"
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(async ({ template, data, media }: TemplateSchema) => {
+          const ok = await window.api.sendTemplate(template, data, media)
+          if (!ok) throw new Error('There was an error sending the template')
+          form.reset()
+        })}
       >
         <FormField
           control={form.control}
