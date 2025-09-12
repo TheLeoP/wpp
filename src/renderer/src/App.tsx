@@ -97,7 +97,7 @@ function TemplateForm() {
                 <FormItem className="flex flex-col">
                   <FormLabel>Datos:</FormLabel>
                   <FormControl>
-                    <div className="flex h-128 flex-col space-y-2">
+                    <div className="flex h-109 flex-col space-y-2">
                       <div className="flex space-x-2">
                         <div className="grow truncate">{data || 'Ningún archivo seleccionado'}</div>
                         <Button
