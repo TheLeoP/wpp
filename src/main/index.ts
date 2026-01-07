@@ -6,6 +6,7 @@ import { Client, ClientOptions, LocalAuth, MessageMedia } from 'whatsapp-web.js'
 import * as xlsx from 'xlsx'
 import mustache from 'mustache'
 import { promises as a } from 'fs'
+import * as fs from 'fs'
 import type { Config } from '../schemas'
 import { configSchema } from '../schemas'
 
@@ -122,6 +123,32 @@ async function scheduleMessages(win: BrowserWindow, messages: Message[], media: 
   setTimeout(scheduleNextMessage, wait_in_ms)
 }
 
+function getChrome() {
+  const isWin = process.platform === 'win32'
+  // TODO: support other platforms
+  if (!isWin) throw new Error('Currently, only windows is supported')
+
+  const prefixes = [
+    process.env.LOCALAPPDATA,
+    process.env.PROGRAMFILES,
+    process.env['PROGRAMFILES(X86)']
+  ]
+
+  const executable = prefixes
+    .filter((prefix) => !!prefix)
+    .map((prefix) => `${prefix}\\Google\\Chrome\\Application\\chrome.exe`)
+    .find((path) => {
+      return fs.existsSync(path)
+    })
+
+  if (!executable)
+    throw new Error(
+      "Coul'ndt find local Google Chrome installation. Is it in an unexpected location? Please, report an error"
+    )
+
+  return executable
+}
+
 let client: Client
 let authenticated = false
 let qr: string | null = null
@@ -135,11 +162,10 @@ async function init(win: BrowserWindow) {
       dataPath: `${app.getPath('userData')}/.wwebjs_auth/`
     })
   }
+  // TODO: maybe also enable this on dev
   if (!is.dev)
-    // HACK: may need to be changed on different computers
     opts.puppeteer = {
-      executablePath:
-        './resources/app.asar.unpacked/node_modules/puppeteer-core/.local-chromium/win64-1045629/chrome-win/chrome.exe'
+      executablePath: getChrome()
     }
   client = new Client(opts)
   client.on('loading_screen', (percent, message) => {
