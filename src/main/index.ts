@@ -154,9 +154,10 @@ let authenticated = false
 let qr: string | null = null
 async function init(win: BrowserWindow) {
   const opts: ClientOptions = {
+    // HACK: remove after whatsapp-web.js is updated
     webVersionCache: {
-      type: 'local',
-      path: `${app.getPath('userData')}/.wwebjs_cache/`
+      type: 'remote',
+      remotePath: `https://raw.githubusercontent.com/wppconnect-team/wa-version/refs/heads/main/html/2.3000.1031490220-alpha.html`
     },
     authStrategy: new LocalAuth({
       dataPath: `${app.getPath('userData')}/.wwebjs_auth/`
