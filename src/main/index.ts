@@ -2,7 +2,7 @@ import { app, shell, BrowserWindow, ipcMain, dialog, protocol, net } from 'elect
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { Client, ClientOptions, LocalAuth, MessageMedia } from 'whatsapp-web.js'
+import { Client, ClientOptions, LocalAuth, MessageMedia } from '@theleop/whatsapp-web'
 import * as xlsx from 'xlsx'
 import mustache from 'mustache'
 import { promises as a } from 'fs'
