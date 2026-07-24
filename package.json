@@ -1,6 +1,6 @@
 {
   "name": "wpp",
-  "version": "1.6.8",
+  "version": "1.6.9",
   "description": "A small whatsapp-web.js UI",
   "desktopName": "com.github.theleop.wpp",
   "main": "./out/main/index.js",
