@@ -166,10 +166,14 @@ async function init(win: BrowserWindow) {
     }
   }
   client = new Client(opts)
+  let isFirst = true
   client.on('loading_screen', (percent, message) => {
     win.webContents.send('loading', percent, message)
     // HACK: on the latest version 'ready' sometimes is not emitted
-    if (+percent === 100 && message === 'WhatsApp') onReady()
+    if (isFirst) {
+      isFirst = false
+      onReady()
+    }
   })
   client.on('qr', (newQr) => {
     qr = newQr
