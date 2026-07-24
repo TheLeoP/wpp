@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import type { Config } from '../schemas'
-import { type ClientInfo } from 'whatsapp-web.js'
+import { type ClientInfo } from '@theleop/whatsapp-web'
 
 export const api = {
   onQr: (callback: (qr: null | string) => void) => {
