@@ -422,9 +422,9 @@ function App(): React.ReactNode {
       })
     })
     const offTemplateProgress = window.api.onTemplateProgress((id, current, total) => {
-      toast('Enviar progreso', {
+      toast(`Enviando grupo de mensajes #${id}`, {
         id: 'sending-progress',
-        description: `id: ${id} ${current}/${total}`
+        description: `${current === 1 ? 'Enviado' : 'Enviados'} ${current} de ${total} ${total === 1 ? 'mensaje' : 'mensajes'}`
       })
     })
 

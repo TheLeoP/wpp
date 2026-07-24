@@ -73,5 +73,11 @@
     "react-dom": "^19.2.3",
     "typescript": "^5.9.3",
     "vite": "^7.3.0"
+  },
+  "allowScripts": {
+    "patch-package@8.0.1": true
+  },
+  "patchedDependencies": {
+    "whatsapp-web.js@1.34.7": "patches/whatsapp-web.js@1.34.7.patch"
   }
 }

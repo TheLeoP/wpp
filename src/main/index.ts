@@ -102,7 +102,7 @@ function random(min: number, max: number) {
   return Math.floor(Math.random() * (max - min)) + min
 }
 
-let nextId = 0
+let nextId = 1
 async function scheduleMessages(win: BrowserWindow, messages: Message[], media: string) {
   const c = await config
   let i = 0
@@ -154,10 +154,9 @@ let authenticated = false
 let qr: string | null = null
 async function init(win: BrowserWindow) {
   const opts: ClientOptions = {
-    // HACK: remove after whatsapp-web.js is updated
     webVersionCache: {
-      type: 'remote',
-      remotePath: `https://raw.githubusercontent.com/wppconnect-team/wa-version/refs/heads/main/html/2.3000.1043041454-alpha.html`
+      type: 'local',
+      path: `${app.getPath('userData')}/.wwebjs_cache/`
     },
     authStrategy: new LocalAuth({
       dataPath: `${app.getPath('userData')}/.wwebjs_auth/`
@@ -169,6 +168,8 @@ async function init(win: BrowserWindow) {
   client = new Client(opts)
   client.on('loading_screen', (percent, message) => {
     win.webContents.send('loading', percent, message)
+    // HACK: on the latest version 'ready' sometimes is not emitted
+    if (+percent === 100 && message === 'WhatsApp') onReady()
   })
   client.on('qr', (newQr) => {
     qr = newQr
@@ -185,8 +186,23 @@ async function init(win: BrowserWindow) {
     authenticated = false
     win.webContents.send('authenticated', authenticated)
   })
-  client.on('ready', async () => {
+
+  function onReady() {
+    if (!client.info) {
+      const interval = setInterval(() => {
+        if (!client.info) return
+
+        win.webContents.send('ready', client.info)
+        clearInterval(interval)
+      }, 1000)
+      return
+    }
+
     win.webContents.send('ready', client.info)
+  }
+
+  client.on('ready', () => {
+    onReady()
   })
 
   ipcMain.once('logout', async () => {
