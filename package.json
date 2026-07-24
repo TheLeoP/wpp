@@ -1,10 +1,11 @@
 {
   "name": "wpp",
   "version": "1.6.1",
-  "description": "An Electron application with React and TypeScript",
+  "description": "A small whatsapp-web.js UI",
+  "desktopName": "com.github.theleop.wpp",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "TheLeoP",
+  "homepage": "https://github.com/TheLeoP",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
@@ -65,7 +66,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "electron": "^43.2.0",
     "electron-builder": "^26.4.0",
-    "electron-vite": "^4.0.1",
+    "electron-vite": "^5.0.0",
     "eslint": "^9.39.2",
     "eslint-plugin-react": "^7.37.5",
     "prettier": "^3.9.6",
