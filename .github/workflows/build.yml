@@ -29,27 +29,41 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build and release on Mac
+      - name: Build on Mac
         if: startsWith(matrix.os, 'macOS')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm run publish:mac
+          npm run build:mac
 
-      - name: Build and release on Linux
+      - name: Build on Linux
         if: startsWith(matrix.os, 'ubuntu')
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm run publish:linux
+          npm run build:linux
 
-      - name: Build and release on Windows
+      - name: Build on Windows
         if: startsWith(matrix.os, 'windows')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm run publish:win
+          npm run build:win
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: electron-build-${{ matrix.os }}
+          path: |
+            dist/*.yml
+            dist/*.AppImage
+            dist/*.dmg
+            dist/*.dmg.blockmap
+            dist/*.nsis.7z
+            dist/*.exe
+            dist/*.deb
+            dist/*.snap
 
   release:
     runs-on: ubuntu-latest
@@ -66,8 +80,12 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: electron-build-*
+          path: all-dist/
+          merge-multiple: true
 
       - name: Get version
         run: |
@@ -78,25 +96,24 @@ jobs:
           echo "VERSION_HASH=$(git rev-parse -q --verify 'refs/tags/${{ env.VERSION_TAG }}')" >> $GITHUB_ENV
           echo "CHANGELOG_ANCHOR=$(echo $VERSION_TAG | sed -e 's/\.//g')" >> $GITHUB_ENV
 
-      - name: Fetch draft release
+      - name: Create Single Draft Release
         if: ${{ env.VERSION_HASH == '' }}
-        uses: cardinalby/git-get-release-action@v1
-        id: get_draft_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        id: create_draft
+        uses: softprops/action-gh-release@v3
         with:
-          latest: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ env.VERSION_TAG }}
+          name: ${{ env.VERSION_TAG }}
           draft: true
-          searchLimit: 1
+          prerelease: false
+          files: |
+            all-dist/**/*
 
       - name: Publish Release (if it does not exist)
         if: ${{ env.VERSION_HASH == '' }}
         uses: irongut/EditRelease@v1.2.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          id: ${{ steps.get_draft_release.outputs.id }}
+          id: ${{ steps.create_draft.outputs.id }}
           draft: false
           prerelease: false
-          replacename: true
-          name: ${{ env.VERSION_TAG }}
-          replacebody: true
