@@ -56,8 +56,13 @@ jobs:
         with:
           name: electron-build-${{ matrix.os }}
           path: |
-            dist/*
-            !dist/*/
+            dist/nsis-web/*
+            dist/*.yml
+            dist/*.AppImage
+            dist/*.dmg
+            dist/*.dmg.blockmap
+            dist/*.deb
+            dist/*.snap
 
   release:
     runs-on: ubuntu-latest
