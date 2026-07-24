@@ -57,6 +57,7 @@ jobs:
           name: electron-build-${{ matrix.os }}
           path: |
             dist/*
+            !dist/*/
 
   release:
     runs-on: ubuntu-latest
