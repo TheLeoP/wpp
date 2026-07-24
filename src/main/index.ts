@@ -125,18 +125,18 @@ async function scheduleMessages(win: BrowserWindow, messages: Message[], media: 
 
 function getChrome() {
   const isWin = process.platform === 'win32'
+  const isLinux = process.platform === 'linux'
   // TODO: support other platforms
-  if (!isWin) throw new Error('Currently, only windows is supported')
+  if (!isWin && !isLinux) throw new Error('Currently, only Windows and Linux are supported')
 
-  const prefixes = [
-    process.env.LOCALAPPDATA,
-    process.env.PROGRAMFILES,
-    process.env['PROGRAMFILES(X86)']
-  ]
+  const prefixes = isWin
+    ? [process.env.LOCALAPPDATA, process.env.PROGRAMFILES, process.env['PROGRAMFILES(X86)']]
+    : ['/usr/bin']
 
+  const sufix = isWin ? '\\Google\\Chrome\\Application\\chrome.exe' : '/google-chrome-stable'
   const executable = prefixes
     .filter((prefix) => !!prefix)
-    .map((prefix) => `${prefix}\\Google\\Chrome\\Application\\chrome.exe`)
+    .map((prefix) => `${prefix}${sufix}`)
     .find((path) => {
       return fs.existsSync(path)
     })
@@ -160,13 +160,11 @@ async function init(win: BrowserWindow) {
     },
     authStrategy: new LocalAuth({
       dataPath: `${app.getPath('userData')}/.wwebjs_auth/`
-    })
-  }
-  // TODO: maybe also enable this on dev
-  if (!is.dev)
-    opts.puppeteer = {
+    }),
+    puppeteer: {
       executablePath: getChrome()
     }
+  }
   client = new Client(opts)
   client.on('loading_screen', (percent, message) => {
     win.webContents.send('loading', percent, message)
